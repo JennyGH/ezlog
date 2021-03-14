@@ -1,0 +1,70 @@
+# ##################################################################################
+#
+# Document URL: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+#
+# ##################################################################################
+
+Language: Cpp
+Standard: Auto
+BasedOnStyle: LLVM
+PointerAlignment: Left
+UseTab: Never
+TabWidth: 4
+IndentWidth: 4
+MaxEmptyLinesToKeep: 1
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AlignAfterOpenBracket: AlwaysBreak
+AlwaysBreakAfterReturnType: None
+IndentCaseLabels: true
+AlignTrailingComments: true
+SpaceAfterCStyleCast: false
+AlignOperands: true
+AlignEscapedNewlines: Right
+AlignConsecutiveMacros: true
+SpacesInSquareBrackets: false
+AlignConsecutiveDeclarations: true
+SpacesInContainerLiterals: false
+BreakInheritanceList: BeforeComma
+BreakConstructorInitializers: BeforeComma
+BreakConstructorInitializersBeforeComma: true
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+# ColumnLimit: 100
+ContinuationIndentWidth: 4
+SpaceBeforeAssignmentOperators: true
+SpacesBeforeTrailingComments: 1
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Allman
+NamespaceIndentation: All
+AccessModifierOffset: -4
+FixNamespaceComments: true
+AlwaysBreakTemplateDeclarations: Yes
+AlignConsecutiveAssignments: true
+AllowShortBlocksOnASingleLine: Empty
+# AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: false
+BreakStringLiterals: false
+# IndentExternBlock: Indent
+IndentPPDirectives: AfterHash
+IndentWrappedFunctionNames: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeRangeBasedForLoopColon: true
+SortIncludes: false
