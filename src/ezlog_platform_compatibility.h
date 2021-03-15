@@ -5,8 +5,9 @@
 #include <string.h>
 #if _MSC_VER
 #    include <Windows.h>
-#    define sleep(sec) ::Sleep((sec)*1000)
-#    define snprintf   _snprintf
+#    define sleep(sec)   ::Sleep(int(sec) * 1000)
+#    define usleep(usec) ::Sleep(int(usec) / 10)
+#    define snprintf     _snprintf
 #else
 #    include <unistd.h>
 #    define stricmp(str1, str2) strcasecmp(str1, str2)

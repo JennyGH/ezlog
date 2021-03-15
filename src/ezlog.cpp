@@ -13,9 +13,14 @@
 
 #if _MSC_VER
 #    include <Windows.h>
+typedef DWORD  thread_return_t;
+typedef HANDLE thread_arg_t;
 #else
 #    include <sched.h>
 #    include <pthread.h>
+#    define __stdcall
+typedef void* thread_return_t;
+typedef void* thread_arg_t;
 #endif // _MSC_VER
 
 #define EZLOG_COLOR_START "\033["
@@ -62,11 +67,7 @@
 
 typedef int (*sprintf_hook_t)(const char*, ...);
 typedef int (*vsprintf_hook_t)(const char*, va_list);
-#if _MSC_VER
-typedef DWORD(CALLBACK* async_thread_func_t)(HANDLE);
-#else
-typedef void* (*async_thread_func_t)(void*);
-#endif // _MSC_VER
+typedef thread_return_t(__stdcall* async_thread_func_t)(thread_arg_t);
 
 static const char* g_log_level_tags[] = {
     "[FATAL]  ",
@@ -188,7 +189,7 @@ static void _try_init_output_stream();
  * NOT THREAD SAFE!!!
  * Try to roll log file
  */
-static void          _try_roll_log();
+static void _try_roll_log();
 /*
  * NOT THREAD SAFE!!!
  * Switch current buffer and full buffer.
@@ -204,13 +205,10 @@ static int _stderr_sprintf(const char* format, ...);
 
 static void _if_no_large_enough_async_buffer(const unsigned long& need_size);
 
-static void _try_start_async_log_thread(async_thread_func_t func, void* arg);
+static void
+_try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
 
-#if _MSC_VER
-static DWORD CALLBACK _async_log_thread(HANDLE arg)
-#else
-static void* _async_log_thread(void* arg)
-#endif // _MSC_VER
+static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 {
     while (true)
     {
@@ -222,9 +220,10 @@ static void* _async_log_thread(void* arg)
         ezlog_buffer* full_buffer =
             static_cast<ezlog_buffer*>(wait_context_ptr);
 
+        _scoped_lock;
         full_buffer->flush(g_stream);
     }
-    return 0;
+    return ((thread_return_t)0);
 }
 
 int ezlog_init()
@@ -528,7 +527,7 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
     //    need_size);
 }
 
-void _try_start_async_log_thread(async_thread_func_t func, void* arg)
+void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
 {
     _scoped_lock;
     if (g_is_async_thread_running)

@@ -8,7 +8,6 @@
 #else
 #    include <unistd.h>
 #    include <pthread.h>
-#    include <sys/time.h>
 #endif // _MSC_VER
 
 std::string ezlog_get_time_info()
