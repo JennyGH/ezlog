@@ -1,18 +1,20 @@
 #include "ezlog_utils.h"
+#include "ezlog_platform_compatibility.h"
 #include <time.h>
 #include <stdio.h>
 
-#if WIN32
+#if _MSC_VER
 #    include <Windows.h>
 #else
 #    include <unistd.h>
 #    include <pthread.h>
-#endif // WIN32
+#    include <sys/time.h>
+#endif // _MSC_VER
 
 std::string ezlog_get_time_info()
 {
     char buffer[64] = {0};
-#if WIN32
+#if _MSC_VER
     SYSTEMTIME systime;
     ::GetLocalTime(&systime);
     snprintf(
@@ -34,9 +36,18 @@ std::string ezlog_get_time_info()
         result.tm_hour,
         result.tm_min,
         result.tm_sec);
-#endif // WIN32
+#endif // _MSC_VER
 
     return buffer;
+}
+
+std::size_t ezlog_get_time_info_length()
+{
+#if _MSC_VER
+    return 12;
+#else
+    return 8;
+#endif // _MSC_VER
 }
 
 std::string ezlog_get_thread_info()
@@ -46,15 +57,20 @@ std::string ezlog_get_thread_info()
     snprintf(
         buffer,
         sizeof(buffer),
-        "%04ld",
-#if WIN32
+        "%ld",
+#if _MSC_VER
         ::GetCurrentThreadId()
 #else
         pthread_self()
-#endif // WIN32
+#endif // _MSC_VER
     );
 
     return buffer;
+}
+
+std::size_t ezlog_get_thread_info_length()
+{
+    return ezlog_get_thread_info().length();
 }
 
 char ezlog_byte_hex_encode(unsigned char byte)
@@ -64,24 +80,4 @@ char ezlog_byte_hex_encode(unsigned char byte)
     if (10 <= byte && byte <= 15)
         return 'A' + (byte - 10);
     return '?';
-}
-
-long ezlog_get_file_size(FILE* stream)
-{
-    if (NULL == stream)
-    {
-        return 0;
-    }
-    ::fseek(stream, 0L, SEEK_END);
-    return ::ftell(stream);
-}
-
-void ezlog_try_fclose(FILE*& stream)
-{
-    if (NULL != stream)
-    {
-        ::fflush(stream);
-        ::fclose(stream);
-        stream = NULL;
-    }
 }

@@ -1,0 +1,6 @@
+[B|b]uild*/
+.vs/
+.svn/
+.vscode/
+obj/
+/built

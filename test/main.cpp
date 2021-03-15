@@ -1,11 +1,14 @@
 #include <ezlog.h>
 #include <string>
-#if WIN32
+#include <stdio.h>
+#include <stdlib.h>
+#if _MSC_VER
 #    include <Windows.h>
 #    define sleep(sec) ::Sleep((sec)*1000)
+#    define snprintf   _snprintf
 #else
 #    include <unistd.h>
-#endif // WIN32
+#endif // _MSC_VER
 
 static void assert_hook(const char* expr, const char* file, unsigned int line)
 {
@@ -62,9 +65,11 @@ int main()
     {
         buf[i] = i;
     }
-    ezlog_init(false);
-    ezlog_enable_log_roll(true);
-    ezlog_enable_log_color(true);
+    ezlog_init();
+    ezlog_set_log_roll_enabled(true);
+    ezlog_set_log_color_enabled(true);
+    ezlog_set_async_mode_enabled(true);
+    ezlog_set_async_buffer_size(1024);
     ezlog_set_level(EZLOG_LEVEL_VERBOSE);
     ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL);
     ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);

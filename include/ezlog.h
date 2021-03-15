@@ -1,12 +1,16 @@
 #ifndef _EZLOG_H_
 #define _EZLOG_H_
 
+#ifndef __cplusplus
+#    define bool _Bool
+#    define false 0
+#    define true 1
+#endif /* __cplusplus */
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif // __cplusplus
-
-#include <stdbool.h> // For bool
 
 #define EZLOG_LEVEL_FATAL   0
 #define EZLOG_LEVEL_ERROR   1
@@ -37,11 +41,15 @@ extern "C"
 
     typedef bool (*ezlog_roll_hook_t)(unsigned long file_size);
 
-    int ezlog_init(bool use_async_mode);
+    int ezlog_init();
 
-    void ezlog_enable_log_roll(bool enable);
+    void ezlog_set_log_roll_enabled(bool enable);
 
-    void ezlog_enable_log_color(bool enable);
+    void ezlog_set_log_color_enabled(bool enable);
+
+    void ezlog_set_async_mode_enabled(bool enable);
+
+    void ezlog_set_async_buffer_size(unsigned long size);
 
     void ezlog_set_level(unsigned int level);
 
@@ -68,9 +76,9 @@ extern "C"
         ...);
 
     void ezlog_write_hex(
-        const char*    name,
-        unsigned char* bytes,
-        unsigned int   count_of_bytes);
+        const char*          name,
+        const unsigned char* bytes,
+        unsigned long        count_of_bytes);
 
     void ezlog_deinit();
 
@@ -78,48 +86,15 @@ extern "C"
 
 #define LOG_HEX(bytes, size) ezlog_write_hex(#bytes, bytes, size)
 
-#define LOG_FATAL(...)                                                         \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_FATAL,                                                     \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
-#define LOG_ERROR(...)                                                         \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_ERROR,                                                     \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
-#define LOG_WARN(...)                                                          \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_WARN,                                                      \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
-#define LOG_INFO(...)                                                          \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_INFO,                                                      \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
-#define LOG_DEBUG(...)                                                         \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_DEBUG,                                                     \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
-#define LOG_VERBOSE(...)                                                       \
-    ezlog_write_log(                                                           \
-        EZLOG_LEVEL_VERBOSE,                                                   \
-        __FUNCTION__,                                                          \
-        __FILE__,                                                              \
-        __LINE__,                                                              \
-        __VA_ARGS__)
+#define __LOG(level, ...)                                                      \
+    ezlog_write_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+
+#define LOG_FATAL(...)   __LOG(EZLOG_LEVEL_FATAL, __VA_ARGS__)
+#define LOG_ERROR(...)   __LOG(EZLOG_LEVEL_ERROR, __VA_ARGS__)
+#define LOG_WARN(...)    __LOG(EZLOG_LEVEL_WARN, __VA_ARGS__)
+#define LOG_INFO(...)    __LOG(EZLOG_LEVEL_INFO, __VA_ARGS__)
+#define LOG_DEBUG(...)   __LOG(EZLOG_LEVEL_DEBUG, __VA_ARGS__)
+#define LOG_VERBOSE(...) __LOG(EZLOG_LEVEL_VERBOSE, __VA_ARGS__)
 
 #ifdef __cplusplus
 }
