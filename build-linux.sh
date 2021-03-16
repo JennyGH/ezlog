@@ -4,7 +4,7 @@
 BUILD_DIR_NAME=build-linux
 
 # Specify build type:
-BUILD_TYPE=Debug
+BUILD_TYPE=Release
 
 # Specify install dir, binary files will be installed to here:
 INSTALL_DIR=`pwd`/built/linux

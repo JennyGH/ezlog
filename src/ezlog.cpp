@@ -213,6 +213,10 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
     while (true)
     {
         void* wait_context_ptr = ezlog_event_wait();
+        if (NULL == wait_context_ptr)
+        {
+            break;
+        }
 
         _try_init_output_stream();
         _try_roll_log();
@@ -223,6 +227,7 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
         _scoped_lock;
         full_buffer->flush(g_stream);
     }
+    g_is_async_thread_running = false;
     return ((thread_return_t)0);
 }
 
@@ -483,14 +488,21 @@ void _try_init_output_stream()
  */
 void _try_roll_log()
 {
-    if (g_enabled_log_roll && g_roll_hook(g_stream.get_size()))
+    if (g_enabled_log_roll)
     {
-        const char* path = g_get_output_path_hook();
-        // If not the same path.
-        if (::stricmp(path, g_stream.get_opened_path()) != 0)
+        while (true)
         {
-            // Then set it to g_log_path, and update g_stream;
-            g_stream.load(path);
+            if (!g_roll_hook(g_stream.get_size()))
+            {
+                break;
+            }
+            const char* path = g_get_output_path_hook();
+            // If not the same path.
+            if (::stricmp(path, g_stream.get_opened_path()) != 0)
+            {
+                // Then set it to g_log_path, and update g_stream;
+                g_stream.load(path);
+            }
         }
     }
 }
@@ -755,7 +767,8 @@ void _async_write_hex(
     {
         // If not, try to switch buffer.
         ezlog_buffer* full_buffer = _switch_current_async_buffer();
-        // Notify work thread to flush the content from full buffer to stream.
+        // Notify work thread to flush the content from full buffer to
+        // stream.
         ezlog_event_notify(full_buffer);
     }
     _sprintf_hex(_async_sprintf, _async_vsprintf, name, bytes, count_of_bytes);
@@ -928,7 +941,8 @@ void _async_write_log(
     {
         // If not, try to switch buffer.
         ezlog_buffer* full_buffer = _switch_current_async_buffer();
-        // Notify work thread to flush the content from full buffer to stream.
+        // Notify work thread to flush the content from full buffer to
+        // stream.
         ezlog_event_notify(full_buffer);
     }
     // va_start(args, format);
