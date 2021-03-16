@@ -41,24 +41,65 @@ extern "C"
 
     typedef bool (*ezlog_roll_hook_t)(unsigned long file_size);
 
+    /**
+     * 初始化日志库
+     * @return 成功返回 EZLOG_SUCCESS
+     */
     int ezlog_init();
 
+    /**
+     * 启用/禁用日志滚动
+     * @param enabled 是否启用日志滚动
+     */
     void ezlog_set_log_roll_enabled(bool enable);
 
+    /**
+     * 启用/禁用颜色输出（仅Linux下有效）
+     * @param enabled 是否启用颜色输出
+     */
     void ezlog_set_log_color_enabled(bool enable);
 
+    /**
+     * 启用/禁用异步模式
+     * @param enabled 是否启用异步模式
+     */
     void ezlog_set_async_mode_enabled(bool enable);
 
+    /**
+     * 设置异步模式的日志缓冲区大小，仅针对异步模式起作用
+     * @param size 缓冲区大小
+     */
     void ezlog_set_async_buffer_size(unsigned long size);
 
+    /**
+     * 设置日志等级，高于所设等级的日志将不会被输出
+     * @param level 日志等级（EZLOG_LEVEL_*）
+     */
     void ezlog_set_level(unsigned int level);
 
+    /**
+     * 设置日志滚动钩子函数，用于判断何时该产生新的日志文件
+     * @param hook 钩子函数
+     */
     void ezlog_set_roll_hook(ezlog_roll_hook_t hook);
 
+    /**
+     * 设置断言钩子函数，由上层处理断言情况
+     * @param hook 钩子函数
+     */
     void ezlog_set_assert_hook(ezlog_assert_hook_t hook);
 
+    /**
+     * 设置获取输出路径的钩子函数
+     * @param hook 钩子函数
+     */
     void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook hook);
 
+    /**
+     * 设置输出格式
+     * @param level 日志等级
+     * @param flag  EZLOG_FORMAT_* 组合得到的值
+     */
     void ezlog_set_format(unsigned int level, unsigned int flag);
 
     void ezlog_assert(
@@ -80,20 +121,31 @@ extern "C"
         const unsigned char* bytes,
         unsigned long        count_of_bytes);
 
+    /**
+     * 反初始化，释放日志库资源
+     */
     void ezlog_deinit();
 
-#define EZLOG_ASSERT(expr) ezlog_assert((expr), #expr, __FILE__, __LINE__)
+#define EZLOG_ASSERT(expr)                                                     \
+    ezlog_assert((expr), #expr, __FILE__, __LINE__) // 记录断言
 
-#define LOG_HEX(bytes, size) ezlog_write_hex(#bytes, bytes, size)
+#define LOG_HEX(bytes, size)                                                   \
+    ezlog_write_hex(#bytes, bytes, size) // 输出十六进制
 
 #define __LOG(level, ...)                                                      \
     ezlog_write_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
 
-#define LOG_FATAL(...)   __LOG(EZLOG_LEVEL_FATAL, __VA_ARGS__)
-#define LOG_ERROR(...)   __LOG(EZLOG_LEVEL_ERROR, __VA_ARGS__)
-#define LOG_WARN(...)    __LOG(EZLOG_LEVEL_WARN, __VA_ARGS__)
-#define LOG_INFO(...)    __LOG(EZLOG_LEVEL_INFO, __VA_ARGS__)
-#define LOG_DEBUG(...)   __LOG(EZLOG_LEVEL_DEBUG, __VA_ARGS__)
+// 输出 FATAL 级日志
+#define LOG_FATAL(...) __LOG(EZLOG_LEVEL_FATAL, __VA_ARGS__)
+// 输出 ERROR 级日志
+#define LOG_ERROR(...) __LOG(EZLOG_LEVEL_ERROR, __VA_ARGS__)
+// 输出 WARN 级日志
+#define LOG_WARN(...) __LOG(EZLOG_LEVEL_WARN, __VA_ARGS__)
+// 输出 INFO 级日志
+#define LOG_INFO(...) __LOG(EZLOG_LEVEL_INFO, __VA_ARGS__)
+// 输出 DEBUG 级日志
+#define LOG_DEBUG(...) __LOG(EZLOG_LEVEL_DEBUG, __VA_ARGS__)
+// 输出 VERBOSE 级日志
 #define LOG_VERBOSE(...) __LOG(EZLOG_LEVEL_VERBOSE, __VA_ARGS__)
 
 #ifdef __cplusplus
