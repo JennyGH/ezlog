@@ -77,7 +77,6 @@ static const char* g_log_level_tags[] = {
     "[DEBUG]  ",
     "[VERBOSE]",
 };
-
 static const char* g_log_level_colors[] = {
     EZLOG_COLOR_FATAL,
     EZLOG_COLOR_ERROR,
@@ -86,7 +85,14 @@ static const char* g_log_level_colors[] = {
     EZLOG_COLOR_DEBUG,
     EZLOG_COLOR_VERBOSE,
 };
-
+static unsigned int g_level_format[] = {
+    EZLOG_FORMAT_ALL,
+    EZLOG_FORMAT_ALL,
+    EZLOG_FORMAT_ALL,
+    EZLOG_FORMAT_ALL,
+    EZLOG_FORMAT_ALL,
+    EZLOG_FORMAT_ALL,
+};
 static ezlog_stream               g_stream;
 static bool                       g_async_mode_enabled      = false;
 static bool                       g_enabled_log_roll        = false;
@@ -101,14 +107,6 @@ static unsigned int               g_log_level            = EZLOG_LEVEL_VERBOSE;
 static ezlog_roll_hook_t          g_roll_hook            = NULL;
 static ezlog_assert_hook_t        g_assert_hook          = NULL;
 static ezlog_get_output_path_hook g_get_output_path_hook = NULL;
-static unsigned int               g_level_format[]       = {
-    EZLOG_FORMAT_ALL,
-    EZLOG_FORMAT_ALL,
-    EZLOG_FORMAT_ALL,
-    EZLOG_FORMAT_ALL,
-    EZLOG_FORMAT_ALL,
-    EZLOG_FORMAT_ALL,
-};
 
 static void _vsprintf_log(
     sprintf_hook_t  sprintf_hook,
