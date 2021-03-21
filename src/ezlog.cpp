@@ -780,11 +780,6 @@ void _async_write_hex(
     _scoped_lock;
     if (need_size > g_async_buffer_size)
     {
-        /*
-         * NOTICE!!!
-         * No buffer is large enough to sprintf log content.
-         * What should I do???
-         */
         _if_no_large_enough_async_buffer(need_size);
         return;
     }
@@ -954,11 +949,6 @@ void _async_write_log(
     _scoped_lock;
     if (need_size > g_async_buffer_size)
     {
-        /*
-         * NOTICE!!!
-         * No buffer is large enough to sprintf log content.
-         * What should I do???
-         */
         _if_no_large_enough_async_buffer(need_size);
         return;
     }
