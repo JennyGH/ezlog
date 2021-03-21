@@ -51,7 +51,7 @@ typedef struct test_result
     time_t  total_seconds;
 } test_result;
 
-static unsigned char      g_test_bytes[64] = {0};
+static unsigned char      g_test_bytes[76] = {0};
 static const unsigned int g_test_log_count = 100000;
 static test_config        g_test_config;
 static test_result*       g_test_results = NULL;

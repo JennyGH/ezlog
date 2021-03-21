@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <string>
 #include <ezlog.h>
 #include "ezlog_utils.h"
@@ -22,6 +23,12 @@ typedef HANDLE thread_arg_t;
 typedef void* thread_return_t;
 typedef void* thread_arg_t;
 #endif // _MSC_VER
+
+#ifdef _DEBUG
+#    define _ASSERT(expr) assert(expr)
+#else
+#    define _ASSERT(expr)
+#endif // _DEBUG
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
@@ -202,6 +209,7 @@ static int _stderr_vsprintf(const char* format, va_list args);
 static int _stderr_sprintf(const char* format, ...);
 
 static void _if_no_large_enough_async_buffer(const unsigned long& need_size);
+static void _if_stream_is_not_opened(const ezlog_stream& stream);
 
 static void
 _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
@@ -525,16 +533,30 @@ ezlog_buffer* _switch_current_async_buffer()
 
 void _if_no_large_enough_async_buffer(const unsigned long& need_size)
 {
-    //_sprintf_log(
-    //    _stderr_sprintf,
-    //    _stderr_vsprintf,
-    //    EZLOG_LEVEL_FATAL,
-    //    NULL,
-    //    NULL,
-    //    0,
-    //    "No buffer is large enough to sprintf log content,
-    //    g_async_buffer_size: %ld, need_size: %ld", g_async_buffer_size,
-    //    need_size);
+    _sprintf_log(
+        _stderr_sprintf,
+        _stderr_vsprintf,
+        EZLOG_LEVEL_FATAL,
+        NULL,
+        NULL,
+        0,
+        "No buffer is large enough to sprintf log content, g_async_buffer_size: %ld, need_size: %ld",
+        g_async_buffer_size,
+        need_size);
+    _ASSERT(need_size <= g_async_buffer_size);
+}
+
+void _if_stream_is_not_opened(const ezlog_stream& stream)
+{
+    _sprintf_log(
+        _stderr_sprintf,
+        _stderr_vsprintf,
+        EZLOG_LEVEL_FATAL,
+        NULL,
+        NULL,
+        0,
+        "Output stream is not opened.");
+    _ASSERT(stream.is_opened());
 }
 
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
@@ -583,6 +605,11 @@ int _stderr_sprintf(const char* format, ...)
 }
 int _sync_vsprintf(const char* format, va_list args)
 {
+    if (!g_stream.is_opened())
+    {
+        _if_stream_is_not_opened(g_stream);
+        return 0;
+    }
     return vfprintf(g_stream, format, args);
 }
 int _sync_sprintf(const char* format, ...)

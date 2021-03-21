@@ -22,5 +22,3 @@ for i in {0..1}; do
         do_test $[i*BUFF_SIZE] $[j*ROLL_SIZE]
     done
 done
-
-
