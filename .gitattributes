@@ -11,3 +11,6 @@
 *.DOCX   diff=astextplain
 *.sh     text eol=lf
 *.bat    text eol=crlf
+*.rc     text eol=crlf
+*.def    text eol=crlf
+*.map    text eol=lf
