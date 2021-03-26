@@ -49,19 +49,19 @@ extern "C"
 
     /**
      * 启用/禁用日志滚动
-     * @param enabled 是否启用日志滚动
+     * @param enable 是否启用日志滚动
      */
     void ezlog_set_log_roll_enabled(bool enable);
 
     /**
      * 启用/禁用颜色输出（仅Linux下有效）
-     * @param enabled 是否启用颜色输出
+     * @param enable 是否启用颜色输出
      */
     void ezlog_set_log_color_enabled(bool enable);
 
     /**
      * 启用/禁用异步模式
-     * @param enabled 是否启用异步模式
+     * @param enable 是否启用异步模式
      */
     void ezlog_set_async_mode_enabled(bool enable);
 
