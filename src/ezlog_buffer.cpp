@@ -49,11 +49,15 @@ int ezlog_buffer::snprintf(const char* format, ...)
 int ezlog_buffer::vsnprintf(const char* format, va_list args)
 {
     int used_size = m_size - m_remain;
+    // If m_remain is too small, vsnprintf will return need size for formatting buffer.
     int size      = ::vsnprintf(m_buffer + used_size, m_remain, format, args);
-    m_remain -= size;
-    if (m_remain < 0)
+    if (size > m_remain)
     {
         m_remain = 0;
+    }
+    else
+    {
+        m_remain -= size;
     }
     return size;
 }

@@ -6,13 +6,15 @@ extern "C"
 {
 #endif // __cplusplus
 
-    void ezlog_lock_init();
+    typedef void* ezlog_lock;
 
-    void ezlog_lock_lock();
+    ezlog_lock ezlog_lock_init();
 
-    void ezlog_lock_unlock();
+    void ezlog_lock_lock(ezlog_lock lock);
 
-    void ezlog_lock_deinit();
+    void ezlog_lock_unlock(ezlog_lock lock);
+
+    void ezlog_lock_deinit(ezlog_lock lock);
 
 #ifdef __cplusplus
 }

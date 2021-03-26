@@ -73,7 +73,7 @@ typedef void* thread_arg_t;
 
 #define EZLOG_ASYNC_BUFFER_COUNT 2
 
-#define _scoped_lock    ezlog_scoped_lock _lock_
+#define _scoped_lock    ezlog_scoped_lock _lock_(g_lock)
 #define _current_buffer ((g_async_buffers[g_async_buffer_index]))
 
 typedef int (*sprintf_hook_t)(const char*, ...);
@@ -117,6 +117,7 @@ static unsigned int               g_log_level            = EZLOG_LEVEL_VERBOSE;
 static ezlog_roll_hook_t          g_roll_hook            = NULL;
 static ezlog_assert_hook_t        g_assert_hook          = NULL;
 static ezlog_get_output_path_hook g_get_output_path_hook = NULL;
+static ezlog_lock                 g_lock                 = NULL;
 
 static void _vsprintf_log(
     sprintf_hook_t  sprintf_hook,
@@ -156,20 +157,20 @@ static void _sprintf_hex(
     vsprintf_hook_t      vsprintf_hook,
     const char*          name,
     const unsigned char* bytes,
-    unsigned int         count_of_bytes);
+    const unsigned long& count_of_bytes);
 static void _sync_write_hex(
     const char*          name,
     const unsigned char* bytes,
-    unsigned long        count_of_bytes);
+    const unsigned long& count_of_bytes);
 static void _async_write_hex(
     const char*          name,
     const unsigned char* bytes,
-    unsigned long        count_of_bytes);
+    const unsigned long& count_of_bytes);
 
 static unsigned long _get_need_buffer_size(
     const char*          name,
     const unsigned char* bytes,
-    unsigned int         count_of_bytes);
+    const unsigned long& count_of_bytes);
 static unsigned long _get_need_buffer_size(
     unsigned int level,
     const char*  func,
@@ -203,6 +204,12 @@ static void _try_roll_log();
  * Switch current buffer and full buffer.
  */
 static ezlog_buffer* _switch_current_async_buffer();
+
+/*
+ * THREAD SAFE.
+ * Try to switch current buffer and full buffer.
+ */
+static void _try_switch_current_async_buffer(const unsigned long& need_size);
 
 static int _sync_vsprintf(const char* format, va_list args);
 static int _sync_sprintf(const char* format, ...);
@@ -252,7 +259,7 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
 int ezlog_init()
 {
-    ezlog_lock_init();
+    g_lock = ezlog_lock_init();
     _scoped_lock;
     g_is_inited            = true;
     g_async_buffer_index   = 0;
@@ -502,11 +509,12 @@ const char* _get_level_color(unsigned int level)
 }
 
 /*
- * NOT THREAD SAFE!!!
+ * THREAD SAFE.
  * Try to init the output stream.
  */
 void _try_init_output_stream()
 {
+    _scoped_lock;
     if (!g_stream.is_opened())
     {
         g_stream.load(g_get_output_path_hook());
@@ -514,11 +522,12 @@ void _try_init_output_stream()
 }
 
 /*
- * NOT THREAD SAFE!!!
+ * THREAD SAFE.
  * Try to roll log file
  */
 void _try_roll_log()
 {
+    _scoped_lock;
     if (g_enabled_log_roll)
     {
         while (true)
@@ -576,10 +585,13 @@ void _if_stream_is_not_opened(const ezlog_stream& stream)
 
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
 {
-    _scoped_lock;
-    if (g_is_async_thread_running)
+    // Lock and check if the backend thread is running.
     {
-        return;
+        _scoped_lock;
+        if (g_is_async_thread_running)
+        {
+            return;
+        }
     }
 #if _MSC_VER
     HANDLE hThread = ::CreateThread(NULL, 0, func, arg, 0, NULL);
@@ -616,6 +628,23 @@ int _stderr_sprintf(const char* format, ...)
     int size = _stderr_vsprintf(format, args);
     va_end(args);
     return size;
+}
+void _try_switch_current_async_buffer(const unsigned long& need_size)
+{
+    _scoped_lock;
+    if (need_size > g_async_buffer_size)
+    {
+        _if_no_large_enough_async_buffer(need_size);
+        return;
+    }
+    if (need_size > _current_buffer->get_remain_size())
+    {
+        // If not, try to switch buffer.
+        ezlog_buffer* full_buffer = _switch_current_async_buffer();
+        // Notify work thread to flush the content from full buffer to
+        // stream.
+        ezlog_event_notify(full_buffer);
+    }
 }
 int _sync_vsprintf(const char* format, va_list args)
 {
@@ -743,7 +772,7 @@ unsigned long _get_need_buffer_size(
 unsigned long _get_need_buffer_size(
     const char*          name,
     const unsigned char* bytes,
-    unsigned int         count_of_bytes)
+    const unsigned long& count_of_bytes)
 {
     unsigned long need_size = 0;
     need_size += (9 + ::strlen(name));
@@ -757,14 +786,14 @@ void _sprintf_hex(
     vsprintf_hook_t      vsprintf_hook,
     const char*          name,
     const unsigned char* bytes,
-    unsigned int         count_of_bytes)
+    const unsigned long& count_of_bytes)
 {
     if (NULL == name || NULL == bytes || count_of_bytes == 0)
     {
         return;
     }
     sprintf_hook("Hex of %s: ", name);
-    for (unsigned int i = 0; i < count_of_bytes; i++)
+    for (unsigned long i = 0; i < count_of_bytes; i++)
     {
         sprintf_hook("%02X", bytes[i]);
     }
@@ -774,37 +803,26 @@ void _sprintf_hex(
 void _sync_write_hex(
     const char*          name,
     const unsigned char* bytes,
-    unsigned long        count_of_bytes)
+    const unsigned long& count_of_bytes)
 {
-    _scoped_lock;
     _try_init_output_stream();
     _try_roll_log();
+    _scoped_lock;
     _sprintf_hex(_sync_sprintf, _sync_vsprintf, name, bytes, count_of_bytes);
 }
 
 void _async_write_hex(
     const char*          name,
     const unsigned char* bytes,
-    unsigned long        count_of_bytes)
+    const unsigned long& count_of_bytes)
 {
     unsigned long need_size =
         _get_need_buffer_size(name, bytes, count_of_bytes);
 
-    // Check the current buffer is large enough.
+    // Check if the current buffer is large enough.
+    _try_switch_current_async_buffer(need_size);
+
     _scoped_lock;
-    if (need_size > g_async_buffer_size)
-    {
-        _if_no_large_enough_async_buffer(need_size);
-        return;
-    }
-    if (need_size > _current_buffer->get_remain_size())
-    {
-        // If not, try to switch buffer.
-        ezlog_buffer* full_buffer = _switch_current_async_buffer();
-        // Notify work thread to flush the content from full buffer to
-        // stream.
-        ezlog_event_notify(full_buffer);
-    }
     _sprintf_hex(_async_sprintf, _async_vsprintf, name, bytes, count_of_bytes);
 }
 
@@ -934,9 +952,9 @@ void _sync_write_log(
     const char*  format,
     va_list      args)
 {
-    _scoped_lock;
     _try_init_output_stream();
     _try_roll_log();
+    _scoped_lock;
     _vsprintf_log(
         _sync_sprintf,
         _sync_vsprintf,
@@ -960,21 +978,9 @@ void _async_write_log(
         _get_need_buffer_size(level, func, file, line, format, args);
 
     // Check if the current buffer is large enough.
+    _try_switch_current_async_buffer(need_size);
+
     _scoped_lock;
-    if (need_size > g_async_buffer_size)
-    {
-        _if_no_large_enough_async_buffer(need_size);
-        return;
-    }
-    if (need_size > _current_buffer->get_remain_size())
-    {
-        // If not, try to switch buffer.
-        ezlog_buffer* full_buffer = _switch_current_async_buffer();
-        // Notify work thread to flush the content from full buffer to
-        // stream.
-        ezlog_event_notify(full_buffer);
-    }
-    // va_start(args, format);
     _vsprintf_log(
         _async_sprintf,
         _async_vsprintf,

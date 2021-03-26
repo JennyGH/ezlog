@@ -3,45 +3,75 @@
 
 #if _MSC_VER
 #    include <Windows.h>
-static HANDLE g_lock = NULL;
+typedef HANDLE ezlog_lock_t;
+#    define lock_initializer NULL
 #else
 #    include <unistd.h>
 #    include <pthread.h>
-static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
+typedef pthread_mutex_t ezlog_lock_t;
+#    define lock_initializer PTHREAD_MUTEX_INITIALIZER
 #endif // _MSC_VER
 
-void ezlog_lock_init()
+#define _to_ezlog_lock_t(lock) (static_cast<ezlog_lock_t*>(lock))
+
+ezlog_lock ezlog_lock_init()
 {
+    ezlog_lock_t* lock_ptr = new ezlog_lock_t(lock_initializer);
+    if (NULL == lock_ptr)
+    {
+        return NULL;
+    }
 #if _MSC_VER
-    g_lock = ::CreateMutex(NULL, FALSE, NULL);
+    *lock_ptr = ::CreateMutex(NULL, FALSE, NULL);
 #else
-    pthread_mutex_init(&g_lock, NULL);
+    pthread_mutex_init(lock_ptr, NULL);
+#endif // _MSC_VER
+    return lock_ptr;
+}
+
+void ezlog_lock_lock(ezlog_lock lock)
+{
+    ezlog_lock_t* lock_ptr = _to_ezlog_lock_t(lock);
+    if (NULL == lock_ptr)
+    {
+        // ASSERT!
+        return;
+    }
+#if _MSC_VER
+    ::WaitForSingleObject(*lock_ptr, INFINITE);
+#else
+    pthread_mutex_lock(lock_ptr);
 #endif // _MSC_VER
 }
 
-void ezlog_lock_lock()
+void ezlog_lock_unlock(ezlog_lock lock)
 {
+    ezlog_lock_t* lock_ptr = _to_ezlog_lock_t(lock);
+    if (NULL == lock_ptr)
+    {
+        // ASSERT!
+        return;
+    }
 #if _MSC_VER
-    ::WaitForSingleObject(g_lock, INFINITE);
+    ::ReleaseMutex(*lock_ptr);
 #else
-    pthread_mutex_lock(&g_lock);
+    pthread_mutex_unlock(lock_ptr);
 #endif // _MSC_VER
 }
 
-void ezlog_lock_unlock()
+void ezlog_lock_deinit(ezlog_lock lock)
 {
+    ezlog_lock_t* lock_ptr = _to_ezlog_lock_t(lock);
+    if (NULL == lock_ptr)
+    {
+        // ASSERT!
+        return;
+    }
 #if _MSC_VER
-    ::ReleaseMutex(g_lock);
+    ::CloseHandle(*lock_ptr);
 #else
-    pthread_mutex_unlock(&g_lock);
+    pthread_mutex_destroy(lock_ptr);
 #endif // _MSC_VER
-}
-
-void ezlog_lock_deinit()
-{
-#if _MSC_VER
-    ::CloseHandle(g_lock);
-#else
-    pthread_mutex_destroy(&g_lock);
-#endif // _MSC_VER
+    delete lock_ptr;
+    lock_ptr = NULL;
 }
