@@ -30,9 +30,9 @@ typedef void* thread_arg_t;
         printf(__VA_ARGS__);                                                   \
         printf("\n");                                                          \
     } while (0)
-        
+
 #ifndef PROJECT_ROOT
-#define PROJECT_ROOT "."
+#    define PROJECT_ROOT "."
 #endif // !PROJECT_ROOT
 
 typedef thread_return_t(__stdcall* async_thread_func_t)(thread_arg_t);
@@ -126,6 +126,9 @@ static bool roll_hook(unsigned long file_size)
 
 static const char* get_output_path_hook()
 {
+#if _DEBUG
+    return EZLOG_STDOUT;
+#else
     static unsigned int index     = 0;
     static char         path[256] = {0};
 
@@ -137,6 +140,7 @@ static const char* get_output_path_hook()
         index++);
 
     return path;
+#endif // _DEBUG
 }
 
 static void print_config(const test_config& config)

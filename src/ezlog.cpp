@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <vector>
 #include <string>
 #include <ezlog.h>
 #include "ezlog_utils.h"
@@ -25,9 +26,9 @@ typedef void* thread_arg_t;
 #endif // _MSC_VER
 
 #ifdef _DEBUG
-#    define _ASSERT(expr) assert(expr)
+#    define _EZLOG_ASSERT(expr) assert(expr)
 #else
-#    define _ASSERT(expr)
+#    define _EZLOG_ASSERT(expr)
 #endif // _DEBUG
 
 #define EZLOG_COLOR_START "\033["
@@ -70,7 +71,10 @@ typedef void* thread_arg_t;
 #define EZLOG_COLOR_VERBOSE                                                    \
     (EZLOG_FRONT_COLOR_WHITE EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
 
-#define _scoped_lock ezlog_scoped_lock _lock_
+#define EZLOG_ASYNC_BUFFER_COUNT 2
+
+#define _scoped_lock    ezlog_scoped_lock _lock_
+#define _current_buffer ((g_async_buffers[g_async_buffer_index]))
 
 typedef int (*sprintf_hook_t)(const char*, ...);
 typedef int (*vsprintf_hook_t)(const char*, va_list);
@@ -106,10 +110,9 @@ static bool                       g_enabled_log_roll        = false;
 static bool                       g_enabled_log_color       = false;
 static bool                       g_is_inited               = false;
 static bool                       g_is_async_thread_running = false;
-static ezlog_buffer*              g_async_buffer_current    = NULL;
-static ezlog_buffer               g_async_buffer_1          = 0;
-static ezlog_buffer               g_async_buffer_2          = 0;
-static unsigned long              g_async_buffer_size       = 0;
+static std::vector<ezlog_buffer*> g_async_buffers;
+static std::size_t                g_async_buffer_index   = 0;
+static unsigned long              g_async_buffer_size    = 0;
 static unsigned int               g_log_level            = EZLOG_LEVEL_VERBOSE;
 static ezlog_roll_hook_t          g_roll_hook            = NULL;
 static ezlog_assert_hook_t        g_assert_hook          = NULL;
@@ -216,6 +219,11 @@ _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
 
 static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 {
+    {
+        _scoped_lock;
+        g_is_async_thread_running = true;
+    }
+
     while (true)
     {
         void* wait_context_ptr = ezlog_event_wait();
@@ -232,8 +240,13 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
         _scoped_lock;
         full_buffer->flush(g_stream);
+        full_buffer->clear();
     }
-    g_is_async_thread_running = false;
+
+    {
+        _scoped_lock;
+        g_is_async_thread_running = false;
+    }
     return ((thread_return_t)0);
 }
 
@@ -242,7 +255,7 @@ int ezlog_init()
     ezlog_lock_init();
     _scoped_lock;
     g_is_inited            = true;
-    g_async_buffer_current = &g_async_buffer_1;
+    g_async_buffer_index   = 0;
     g_roll_hook            = _default_flush_hook;
     g_assert_hook          = _default_assert_hook;
     g_get_output_path_hook = _default_get_output_path_hook;
@@ -262,8 +275,10 @@ void ezlog_set_async_buffer_size(unsigned long size)
     if (size > 0)
     {
         g_async_buffer_size = size;
-        g_async_buffer_1.resize(size);
-        g_async_buffer_2.resize(size);
+        for (size_t i = 0; i < EZLOG_ASYNC_BUFFER_COUNT; i++)
+        {
+            g_async_buffers.push_back(new ezlog_buffer(size));
+        }
     }
 }
 
@@ -416,6 +431,16 @@ void ezlog_deinit()
         ezlog_event_notify(NULL);
         ezlog_event_deinit();
     }
+    std::size_t buffer_count = g_async_buffers.size();
+    for (std::size_t i = 0; i < buffer_count; i++)
+    {
+        ezlog_buffer*& ptr = g_async_buffers[i];
+        if (NULL != ptr)
+        {
+            delete ptr;
+            ptr = NULL;
+        }
+    }
     g_is_inited = false;
 }
 
@@ -515,19 +540,9 @@ void _try_roll_log()
 
 ezlog_buffer* _switch_current_async_buffer()
 {
-    ezlog_buffer* old_buffer = g_async_buffer_current;
-    if (g_async_buffer_current == &g_async_buffer_1)
-    {
-        g_async_buffer_current = &g_async_buffer_2;
-    }
-    else
-    {
-        g_async_buffer_current = &g_async_buffer_1;
-    }
-    if (NULL != g_async_buffer_current)
-    {
-        g_async_buffer_current->clear();
-    }
+    ezlog_buffer* old_buffer = _current_buffer;
+    g_async_buffer_index = (g_async_buffer_index + 1) % g_async_buffers.size();
+    // ezlog_buffer* current_buffer = _current_buffer;
     return old_buffer;
 }
 
@@ -543,7 +558,7 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
         "No buffer is large enough to sprintf log content, g_async_buffer_size: %ld, need_size: %ld",
         g_async_buffer_size,
         need_size);
-    _ASSERT(need_size <= g_async_buffer_size);
+    _EZLOG_ASSERT(need_size <= g_async_buffer_size);
 }
 
 void _if_stream_is_not_opened(const ezlog_stream& stream)
@@ -556,7 +571,7 @@ void _if_stream_is_not_opened(const ezlog_stream& stream)
         NULL,
         0,
         "Output stream is not opened.");
-    _ASSERT(stream.is_opened());
+    _EZLOG_ASSERT(stream.is_opened());
 }
 
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
@@ -588,7 +603,6 @@ void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
     ::pthread_create(&thread_id, &thread_attr, func, arg);
     ::pthread_attr_destroy(&thread_attr);
 #endif // _MSC_VER
-    g_is_async_thread_running = true;
 }
 
 int _stderr_vsprintf(const char* format, va_list args)
@@ -622,7 +636,7 @@ int _sync_sprintf(const char* format, ...)
 }
 int _async_vsprintf(const char* format, va_list args)
 {
-    return g_async_buffer_current->vsnprintf(format, args);
+    return _current_buffer->vsnprintf(format, args);
 }
 int _async_sprintf(const char* format, ...)
 {
@@ -783,7 +797,7 @@ void _async_write_hex(
         _if_no_large_enough_async_buffer(need_size);
         return;
     }
-    if (need_size > g_async_buffer_current->get_remain_size())
+    if (need_size > _current_buffer->get_remain_size())
     {
         // If not, try to switch buffer.
         ezlog_buffer* full_buffer = _switch_current_async_buffer();
@@ -945,14 +959,14 @@ void _async_write_log(
     unsigned long need_size =
         _get_need_buffer_size(level, func, file, line, format, args);
 
-    // Check the current buffer is large enough.
+    // Check if the current buffer is large enough.
     _scoped_lock;
     if (need_size > g_async_buffer_size)
     {
         _if_no_large_enough_async_buffer(need_size);
         return;
     }
-    if (need_size > g_async_buffer_current->get_remain_size())
+    if (need_size > _current_buffer->get_remain_size())
     {
         // If not, try to switch buffer.
         ezlog_buffer* full_buffer = _switch_current_async_buffer();
