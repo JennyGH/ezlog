@@ -1,4 +1,4 @@
-PROJECT(ezlog_test)
+PROJECT(ezlog_benchmark_test)
 
 FILE(GLOB_RECURSE INCLUDE_FILES
     ${PROJECT_SOURCE_DIR}/*.h
@@ -22,9 +22,11 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}
     ezlog
+    pthread
+    benchmark
 )
 
 INSTALL(
-    TARGETS ezlog_test
+    TARGETS ezlog_benchmark_test
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

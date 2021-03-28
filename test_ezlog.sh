@@ -1,5 +1,5 @@
 #!/bin/bash
-EXE="`pwd`"/built/linux/ezlog_test
+EXE="`pwd`"/built/linux/bin/ezlog_test
 BUFF_SIZE=$[1024*1024]
 ROLL_SIZE=$[1024*1024*10]
 OUTPUT_DIR="`pwd`"/test_logs

@@ -1,6 +1,6 @@
 @ECHO OFF
 SETLOCAL
-SET EXE="%CD%\built\win32\ezlog_test.exe"
+SET EXE="%CD%\built\win32\bin\ezlog_test.exe"
 SET /A BUFF_SIZE=1024*1024
 SET /A ROLL_SIZE=1024*1024*10
 SET OUTPUT_DIR=%CD%\test_logs
