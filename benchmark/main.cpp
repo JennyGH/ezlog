@@ -12,10 +12,11 @@
 #    include <unistd.h>
 #endif // _MSC_VER
 
-#define LOG_COUNT    100000
-#define THREAD_COUNT 1
-#define ASYNC_SIZE   (1024 * 1024)
-#define ROLL_SIZE    (1024 * 1024 * 10)
+#define LOG_COUNT      100000
+#define THREAD_COUNT   1
+#define ASYNC_SIZE     (1024 * 1024)
+#define ROLL_SIZE      (1024 * 1024 * 10)
+#define BENCHMARK_UNIT benchmark::kMillisecond
 
 #define INIT_LOG_CONFIGS(async_buffer_size, roll_size)                         \
     do                                                                         \
@@ -45,7 +46,7 @@
             }                                                                  \
         }                                                                      \
     }                                                                          \
-    BENCHMARK(name##_hex)->Unit(benchmark::kMillisecond)->Threads(THREAD_COUNT)
+    BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
 
 #define DECLARE_BENCHMARK_LOG_FMT_FUNCTION(name, async_buffer_size, roll_size) \
     static void name##_formated(benchmark::State& state)                       \
@@ -63,9 +64,7 @@
             }                                                                  \
         }                                                                      \
     }                                                                          \
-    BENCHMARK(name##_formated)                                                 \
-        ->Unit(benchmark::kMillisecond)                                        \
-        ->Threads(THREAD_COUNT)
+    BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
 
 static unsigned char g_test_bytes[39] = {0};
 
