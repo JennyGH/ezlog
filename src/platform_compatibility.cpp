@@ -104,7 +104,7 @@ int __strcpy_s(
 {
     __ASSERT((dest != NULL) && (src != NULL));
     __ASSERT(dest_size > 0);
-    int src_size = ::strlen(src) + 1;
+    size_t src_size = ::strlen(src) + 1;
     __ASSERT(dest_size >= src_size);
     strcpy(dest, src);
     return src_size;
