@@ -35,12 +35,21 @@
 #        define strcasecmp stricmp
 #    endif // !strcasecmp
 
+#    ifndef set_assert_hook
+#        define set_assert_hook(...)
+#    endif // !set_assert_hook
+
 #else
 #    include <errno.h>
 #    include <stdarg.h>
 #    include <assert.h>
 #    include <unistd.h>
 #    include <sys/types.h>
+
+typedef void (*assert_hook_t)(const char*, const char*, unsigned int);
+
+void set_assert_hook(assert_hook_t hook);
+
 void __memcpy_s(
     const char* file,
     size_t      line,

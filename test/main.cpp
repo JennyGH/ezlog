@@ -115,7 +115,15 @@ void _try_start_log_thread(async_thread_func_t func, thread_arg_t arg)
 
 static void assert_hook(const char* expr, const char* file, unsigned int line)
 {
-    LOG_FATAL("ASSERT! expr: %s, file: %s, line: %d", expr, file, line);
+    ezlog_write_log(
+        EZLOG_LEVEL_FATAL,
+        __FUNCTION__,
+        NULL,
+        0,
+        "Assertion failed: %s, at file: \"%s\", line: %d",
+        expr,
+        file,
+        line);
     while (true) {}
 }
 
@@ -126,21 +134,23 @@ static bool roll_hook(unsigned long file_size)
 
 static const char* get_output_path_hook()
 {
-#ifndef NDEBUG
-    return EZLOG_STDOUT;
-#else
-    static unsigned int index     = 0;
-    static char         path[256] = {0};
-
-    snprintf(
-        path,
-        sizeof(path),
-        "%s/test_%d.log",
-        g_test_config.output_dir.c_str(),
-        index++);
-
-    return path;
-#endif // !NDEBUG
+    if (g_test_config.output_dir == EZLOG_STDOUT ||
+        g_test_config.output_dir == EZLOG_STDERR)
+    {
+        return g_test_config.output_dir.c_str();
+    }
+    else
+    {
+        static unsigned int index     = 0;
+        static char         path[256] = {0};
+        snprintf(
+            path,
+            sizeof(path),
+            "%s/test_%d.log",
+            g_test_config.output_dir.c_str(),
+            index++);
+        return path;
+    }
 }
 
 static void print_config(const test_config& config)
@@ -180,7 +190,7 @@ int main(int argc, char* argv[])
     try
     {
         g_test_config.output_dir =
-            args.get<std::string>("output_dir", PROJECT_ROOT);
+            args.get<std::string>("output_dir", EZLOG_STDOUT);
         g_test_config.thread_count = args.get<unsigned int>("thread_count", 1);
         if (g_test_config.thread_count == 0)
         {

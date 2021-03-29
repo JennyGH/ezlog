@@ -28,7 +28,11 @@ typedef void* thread_arg_t;
 #ifndef NDEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
-#    define _EZLOG_ASSERT(expr)
+#    define _EZLOG_ASSERT(expr)                                                \
+        while (!(expr))                                                        \
+        {                                                                      \
+            sleep(1);                                                          \
+        }
 #endif // !NDEBUG
 
 #define EZLOG_COLOR_START "\033["
@@ -290,6 +294,7 @@ int ezlog_init()
     g_roll_hook            = _default_flush_hook;
     g_assert_hook          = _default_assert_hook;
     g_get_output_path_hook = _default_get_output_path_hook;
+    set_assert_hook(_default_assert_hook);
     return EZLOG_SUCCESS;
 }
 
@@ -358,7 +363,7 @@ void ezlog_set_assert_hook(ezlog_assert_hook_t hook)
         return;
     }
     _scoped_lock;
-    g_assert_hook = hook;
+    set_assert_hook(g_assert_hook = hook);
 }
 
 void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook)
@@ -491,12 +496,14 @@ void _default_assert_hook(
     const char*  file,
     unsigned int line)
 {
-    ezlog_write_log(
+    _sprintf_log(
+        _stderr_sprintf,
+        _stderr_vsprintf,
         EZLOG_LEVEL_FATAL,
         NULL,
-        file,
-        line,
-        "(%s) has assert failed at %s:%d",
+        NULL,
+        0,
+        "Assertion failed: %s, at file: \"%s\", line: %d",
         expression,
         file,
         line);
@@ -839,6 +846,7 @@ void _sync_write_hex(
     _try_roll_log();
     _scoped_lock;
     _sprintf_hex(_sync_sprintf, _sync_vsprintf, name, bytes, count_of_bytes);
+    ::fflush(g_stream);
 }
 
 void _async_write_hex(
@@ -906,7 +914,7 @@ void _vsprintf_log(
     {
         if ((_check_level_format(level, EZLOG_FORMAT_FILE_INFO) ||
              _check_level_format(level, EZLOG_FORMAT_LINE_INFO)) &&
-            (NULL != func || line > 0))
+            (NULL != file || line > 0))
         {
             sprintf_hook(" (");
         }
@@ -932,7 +940,7 @@ void _vsprintf_log(
 
         if ((_check_level_format(level, EZLOG_FORMAT_FILE_INFO) ||
              _check_level_format(level, EZLOG_FORMAT_LINE_INFO)) &&
-            (NULL != func || line > 0))
+            (NULL != file || line > 0))
         {
             sprintf_hook(")");
         }
@@ -994,6 +1002,7 @@ void _sync_write_log(
         line,
         format,
         args);
+    ::fflush(g_stream);
 }
 
 void _async_write_log(

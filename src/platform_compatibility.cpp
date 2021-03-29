@@ -1,46 +1,37 @@
 #include "platform_compatibility.h"
 #ifndef _MSC_VER
 #    include <sys/syscall.h>
-#    ifndef NDEBUG
-#        define _output_error(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
-#    else
-#        define _output_error(fmt, ...) // no-op
-#    endif
+#    define __ASSERT_WITH_FILE(expr, file, line)                               \
+        do                                                                     \
+        {                                                                      \
+            if (!(expr))                                                       \
+            {                                                                  \
+                g_assert_hook(#expr, file, line);                              \
+            }                                                                  \
+            assert(expr);                                                      \
+        } while (0)
 
-static inline int __vsprintf_s(
-    const char* function,
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* format,
-    va_list     args)
+#    define __ASSERT(expr) __ASSERT_WITH_FILE(expr, file, line)
+
+static void
+_default_assert_hook(const char* expr, const char* file, unsigned int line)
 {
-    if (NULL == dest || NULL == format || dest_size <= 0)
+    fprintf(
+        stderr,
+        "Assertion failed: %s, at file: \"%s\", line: %d",
+        expr,
+        file,
+        line);
+}
+
+assert_hook_t g_assert_hook = _default_assert_hook;
+
+void set_assert_hook(assert_hook_t hook)
+{
+    if (NULL != hook)
     {
-        _output_error(
-            "%s(dest: 0x%p, dest_size: %lu, format: %s), file: %s, line: %lu",
-            function,
-            dest,
-            dest_size,
-            format,
-            file,
-            line);
+        g_assert_hook = hook;
     }
-    assert((dest != NULL) && (format != NULL));
-    assert((dest_size > 0));
-    int sprintfed_size = vsnprintf(dest, dest_size, format, args);
-    if (dest_size < sprintfed_size)
-    {
-        _output_error(
-            "dest_size < sprintfed_size, while dest_size=%lu and sprintfed_size=%d, file: %s, line: %lu",
-            dest_size,
-            sprintfed_size,
-            file,
-            line);
-    }
-    assert((dest_size >= sprintfed_size));
-    return sprintfed_size;
 }
 
 void __memcpy_s(
@@ -49,22 +40,11 @@ void __memcpy_s(
     void*       dest,
     size_t      dest_size,
     const void* src,
-    size_t      srcSize)
+    size_t      src_size)
 {
-    if (NULL == dest || NULL == src || dest_size < srcSize)
-    {
-        _output_error(
-            "memcpy_s(dest: 0x%p, dest_size: %lu, src: 0x%p, srcSize: %lu), file: %s, line: %lu",
-            dest,
-            dest_size,
-            src,
-            srcSize,
-            file,
-            line);
-    }
-    assert((dest != NULL) && (src != NULL));
-    assert((dest_size >= srcSize));
-    memcpy(dest, src, srcSize);
+    __ASSERT((dest != NULL) && (src != NULL));
+    __ASSERT(dest_size >= src_size);
+    memcpy(dest, src, src_size);
 }
 
 int __vsprintf_s(
@@ -75,14 +55,12 @@ int __vsprintf_s(
     const char* format,
     va_list     args)
 {
-    return __vsprintf_s(
-        "vsprintf_s",
-        file,
-        line,
-        dest,
-        dest_size,
-        format,
-        args);
+    __ASSERT(dest != NULL);
+    __ASSERT(dest_size > 0);
+    __ASSERT(format != NULL);
+    int sprintfed_size = vsnprintf(dest, dest_size, format, args);
+    __ASSERT(dest_size >= sprintfed_size);
+    return sprintfed_size;
 }
 
 int __sprintf_s(
@@ -96,8 +74,7 @@ int __sprintf_s(
 
     va_list args;
     va_start(args, format);
-    int rc =
-        __vsprintf_s("sprintf_s", file, line, dest, dest_size, format, args);
+    int rc = __vsprintf_s(file, line, dest, dest_size, format, args);
     va_end(args);
     return rc;
 }
@@ -109,21 +86,13 @@ int __sscanf_s(
     const char* format,
     ...)
 {
-    if (NULL == buffer || NULL == format)
-    {
-        _output_error(
-            "sscanf_s(buffer: 0x%p, format: %s), file: %s, line: %lu",
-            buffer,
-            format,
-            file,
-            line);
-    }
-    assert((buffer != NULL) && (format != NULL));
+    __ASSERT(buffer != NULL);
+    __ASSERT(format != NULL);
     va_list args;
     va_start(args, format);
-    int sscanfedSize = vsscanf(buffer, format, args);
+    int sscanfed_size = vsscanf(buffer, format, args);
     va_end(args);
-    return sscanfedSize;
+    return sscanfed_size;
 }
 
 int __strcpy_s(
@@ -133,39 +102,12 @@ int __strcpy_s(
     size_t      dest_size,
     const char* src)
 {
-    if (NULL == dest || NULL == src || dest_size <= 0)
-    {
-        _output_error(
-            "strcpy_s(dest: 0x%p, dest_size: %lu, src: %s), file: %s, line: %lu",
-            dest,
-            dest_size,
-            src,
-            file,
-            line);
-    }
-    assert((dest != NULL) && (src != NULL));
-
-    if (dest_size <= 0)
-    {
-        _output_error("dest_size <= 0, file: %s, line: %lu", file, line);
-    }
-    assert((dest_size > 0));
-
-    int srcSize = ::strlen(src);
-    if (dest_size < srcSize)
-    {
-        _output_error(
-            "dest_size < srcSize, while dest_size=%lu and srcSize=%d, file: %s, line: %lu",
-            dest_size,
-            srcSize,
-            file,
-            line);
-    }
-    assert((dest_size >= srcSize));
-
+    __ASSERT((dest != NULL) && (src != NULL));
+    __ASSERT(dest_size > 0);
+    int src_size = ::strlen(src) + 1;
+    __ASSERT(dest_size >= src_size);
     strcpy(dest, src);
-
-    return srcSize;
+    return src_size;
 }
 
 pid_t __gettid()
