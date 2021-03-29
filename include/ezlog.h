@@ -31,13 +31,16 @@ extern "C"
 #define EZLOG_FAIL    0
 
 #define EZLOG_STDOUT "$stdout"
+#define EZLOG_STDERR "$stderr"
+
+#define EZLOG_INFINITE 0xffffffff
 
     typedef void (*ezlog_assert_hook_t)(
         const char*  expr,
         const char*  file,
         unsigned int line);
 
-    typedef const char* (*ezlog_get_output_path_hook)();
+    typedef const char* (*ezlog_get_output_path_hook_t)();
 
     typedef bool (*ezlog_roll_hook_t)(unsigned long file_size);
 
@@ -69,7 +72,13 @@ extern "C"
      * 设置异步模式的日志缓冲区大小，仅针对异步模式起作用
      * @param size 缓冲区大小
      */
-    void ezlog_set_async_buffer_size(unsigned long size);
+    void ezlog_set_async_buffer_size(unsigned int size);
+
+    /**
+     * 设置异步模式时更新输出流的时间间隔
+     * @param seconds 间隔秒数，如果为 EZLOG_INFINITE 则只会在异步缓冲区满时更新输出流，默认为 EZLOG_INFINITE
+     */
+    void ezlog_set_async_update_interval(unsigned int seconds);
 
     /**
      * 设置日志等级，高于所设等级的日志将不会被输出
@@ -93,7 +102,7 @@ extern "C"
      * 设置获取输出路径的钩子函数
      * @param hook 钩子函数
      */
-    void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook hook);
+    void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook);
 
     /**
      * 设置输出格式

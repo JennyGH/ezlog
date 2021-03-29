@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # =============== Set some local variables here. ===============
+# You can change the name of build directory here:
 BUILD_DIR_NAME=build-linux
 
 # Specify build type:
@@ -16,11 +17,11 @@ fi
 # ==============================================================
 cd $BUILD_DIR_NAME
 
-cmake   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-        -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
-        -DCMAKE_C_COMPILER=/usr/bin/gcc       \
-        -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
-        ..
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE        \
+      -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+      -DCMAKE_C_COMPILER=/usr/bin/gcc       \
+      -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
+      ..
 cmake --build . --config $BUILD_TYPE
 make install
 

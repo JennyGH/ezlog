@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "ezlog_buffer.h"
+#include "platform_compatibility.h"
 
 static void _try_release_memory(char*& ptr)
 {
@@ -13,7 +14,7 @@ static void _try_release_memory(char*& ptr)
     }
 }
 
-ezlog_buffer::ezlog_buffer(unsigned long size)
+ezlog_buffer::ezlog_buffer(size_t size)
     : m_buffer(size > 0 ? new char[size]() : NULL)
     , m_size(size)
     , m_remain(size)
@@ -25,7 +26,7 @@ ezlog_buffer::~ezlog_buffer()
     _try_release_memory(m_buffer);
 }
 
-void ezlog_buffer::resize(unsigned long new_size)
+void ezlog_buffer::resize(size_t new_size)
 {
     _try_release_memory(m_buffer);
     if (new_size > 0)
@@ -37,20 +38,21 @@ void ezlog_buffer::resize(unsigned long new_size)
     }
 }
 
-int ezlog_buffer::snprintf(const char* format, ...)
+int ezlog_buffer::push_back(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    int size = this->vsnprintf(format, args);
+    int size = this->push_back(format, args);
     va_end(args);
     return size;
 }
 
-int ezlog_buffer::vsnprintf(const char* format, va_list args)
+int ezlog_buffer::push_back(const char* format, va_list args)
 {
-    int used_size = m_size - m_remain;
-    // If m_remain is too small, vsnprintf will return need size for formatting buffer.
-    int size      = ::vsnprintf(m_buffer + used_size, m_remain, format, args);
+    size_t used = m_size - m_remain;
+    char*  dest = m_buffer + used;
+
+    int size = ::vsnprintf(dest, m_remain, format, args);
     if (size > m_remain)
     {
         m_remain = 0;
@@ -68,13 +70,13 @@ size_t ezlog_buffer::flush(FILE* dest_stream)
     {
         return 0;
     }
-    size_t size =
-        ::fwrite(m_buffer, sizeof(char), m_size - m_remain, dest_stream);
+    size_t used = m_size - m_remain;
+    size_t size = ::fwrite(m_buffer, sizeof(char), used, dest_stream);
     ::fflush(dest_stream);
     return size;
 }
 
-unsigned long ezlog_buffer::get_remain_size() const
+size_t ezlog_buffer::get_remain_size() const
 {
     return m_remain;
 }

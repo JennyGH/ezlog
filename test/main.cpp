@@ -126,7 +126,7 @@ static bool roll_hook(unsigned long file_size)
 
 static const char* get_output_path_hook()
 {
-#if _DEBUG
+#ifndef NDEBUG
     return EZLOG_STDOUT;
 #else
     static unsigned int index     = 0;
@@ -140,7 +140,7 @@ static const char* get_output_path_hook()
         index++);
 
     return path;
-#endif // _DEBUG
+#endif // !NDEBUG
 }
 
 static void print_config(const test_config& config)
@@ -171,7 +171,7 @@ static void printf_result(test_result* results, unsigned int count)
 
 int main(int argc, char* argv[])
 {
-    for (int i = 0; i < sizeof(g_test_bytes); i++)
+    for (unsigned int i = 0; i < sizeof(g_test_bytes); i++)
     {
         g_test_bytes[i] = i;
     }

@@ -11,7 +11,7 @@
 #include "ezlog_stream.h"
 #include "ezlog_buffer.h"
 #include "ezlog_scoped_lock.h"
-#include "ezlog_platform_compatibility.h"
+#include "platform_compatibility.h"
 
 #if _MSC_VER
 #    include <Windows.h>
@@ -25,11 +25,11 @@ typedef void* thread_return_t;
 typedef void* thread_arg_t;
 #endif // _MSC_VER
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
 #    define _EZLOG_ASSERT(expr)
-#endif // _DEBUG
+#endif // !NDEBUG
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
@@ -104,20 +104,22 @@ static unsigned int g_level_format[] = {
     EZLOG_FORMAT_ALL,
     EZLOG_FORMAT_ALL,
 };
-static ezlog_stream               g_stream;
-static bool                       g_async_mode_enabled      = false;
-static bool                       g_enabled_log_roll        = false;
-static bool                       g_enabled_log_color       = false;
-static bool                       g_is_inited               = false;
-static bool                       g_is_async_thread_running = false;
-static std::vector<ezlog_buffer*> g_async_buffers;
-static std::size_t                g_async_buffer_index   = 0;
-static unsigned long              g_async_buffer_size    = 0;
-static unsigned int               g_log_level            = EZLOG_LEVEL_VERBOSE;
-static ezlog_roll_hook_t          g_roll_hook            = NULL;
-static ezlog_assert_hook_t        g_assert_hook          = NULL;
-static ezlog_get_output_path_hook g_get_output_path_hook = NULL;
-static ezlog_lock                 g_lock                 = NULL;
+static ezlog_stream                 g_stream;
+static ezlog_lock                   g_lock                    = NULL;
+static ezlog_event                  g_event                   = NULL;
+static bool                         g_async_mode_enabled      = false;
+static bool                         g_enabled_log_roll        = false;
+static bool                         g_enabled_log_color       = false;
+static bool                         g_is_inited               = false;
+static bool                         g_is_async_thread_running = false;
+static std::vector<ezlog_buffer*>   g_async_buffers;
+static size_t                       g_async_buffer_index    = 0;
+static size_t                       g_async_buffer_size     = 0;
+static size_t                       g_async_update_interval = EZLOG_INFINITE;
+static size_t                       g_log_level   = EZLOG_LEVEL_VERBOSE;
+static ezlog_roll_hook_t            g_roll_hook   = NULL;
+static ezlog_assert_hook_t          g_assert_hook = NULL;
+static ezlog_get_output_path_hook_t g_get_output_path_hook = NULL;
 
 static void _vsprintf_log(
     sprintf_hook_t  sprintf_hook,
@@ -233,17 +235,39 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
     while (true)
     {
-        void* wait_context_ptr = ezlog_event_wait();
-        if (NULL == wait_context_ptr)
+        int           rv          = 0;
+        size_t        interval    = EZLOG_INFINITE;
+        ezlog_buffer* full_buffer = NULL;
+
+        // Get flush interval.
         {
+            _scoped_lock;
+            interval = g_async_update_interval;
+        }
+
+        rv = ezlog_event_wait(g_event, (void**)&full_buffer, interval);
+
+        if (EZLOG_EVENT_SUCCESS != rv)
+        {
+            // If event timeout, output current buffer to stream.
+            if (EZLOG_EVENT_TIMEOUT == rv)
+            {
+                _scoped_lock;
+                _current_buffer->flush(g_stream);
+                _current_buffer->clear();
+            }
+            continue;
+        }
+
+        // Call ezlog_event_notify(g_event, NULL) at somewhere.
+        if (NULL == full_buffer)
+        {
+            // Exit.
             break;
         }
 
         _try_init_output_stream();
         _try_roll_log();
-
-        ezlog_buffer* full_buffer =
-            static_cast<ezlog_buffer*>(wait_context_ptr);
 
         _scoped_lock;
         full_buffer->flush(g_stream);
@@ -259,7 +283,7 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
 int ezlog_init()
 {
-    g_lock = ezlog_lock_init();
+    g_lock = ezlog_lock_create();
     _scoped_lock;
     g_is_inited            = true;
     g_async_buffer_index   = 0;
@@ -272,11 +296,11 @@ int ezlog_init()
 void ezlog_set_async_mode_enabled(bool enable)
 {
     _scoped_lock;
-    ezlog_event_init();
+    g_event              = ezlog_event_create();
     g_async_mode_enabled = enable;
 }
 
-void ezlog_set_async_buffer_size(unsigned long size)
+void ezlog_set_async_buffer_size(unsigned int size)
 {
     _scoped_lock;
     if (size > 0)
@@ -287,6 +311,12 @@ void ezlog_set_async_buffer_size(unsigned long size)
             g_async_buffers.push_back(new ezlog_buffer(size));
         }
     }
+}
+
+void ezlog_set_async_update_interval(unsigned int seconds)
+{
+    _scoped_lock;
+    g_async_update_interval = seconds;
 }
 
 void ezlog_set_log_roll_enabled(bool enable)
@@ -331,7 +361,7 @@ void ezlog_set_assert_hook(ezlog_assert_hook_t hook)
     g_assert_hook = hook;
 }
 
-void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook hook)
+void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook)
 {
     if (NULL == hook)
     {
@@ -435,8 +465,8 @@ void ezlog_deinit()
     g_stream.close();
     if (g_async_mode_enabled)
     {
-        ezlog_event_notify(NULL);
-        ezlog_event_deinit();
+        ezlog_event_notify(g_event, NULL);
+        ezlog_event_destroy(g_event);
     }
     std::size_t buffer_count = g_async_buffers.size();
     for (std::size_t i = 0; i < buffer_count; i++)
@@ -619,7 +649,7 @@ void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
 
 int _stderr_vsprintf(const char* format, va_list args)
 {
-    return ::vfprintf(stderr, format, args);
+    return ::vfprintf_s(stderr, format, args);
 }
 int _stderr_sprintf(const char* format, ...)
 {
@@ -643,7 +673,7 @@ void _try_switch_current_async_buffer(const unsigned long& need_size)
         ezlog_buffer* full_buffer = _switch_current_async_buffer();
         // Notify work thread to flush the content from full buffer to
         // stream.
-        ezlog_event_notify(full_buffer);
+        ezlog_event_notify(g_event, full_buffer);
     }
 }
 int _sync_vsprintf(const char* format, va_list args)
@@ -653,7 +683,7 @@ int _sync_vsprintf(const char* format, va_list args)
         _if_stream_is_not_opened(g_stream);
         return 0;
     }
-    return vfprintf(g_stream, format, args);
+    return vfprintf_s(g_stream, format, args);
 }
 int _sync_sprintf(const char* format, ...)
 {
@@ -665,7 +695,7 @@ int _sync_sprintf(const char* format, ...)
 }
 int _async_vsprintf(const char* format, va_list args)
 {
-    return _current_buffer->vsnprintf(format, args);
+    return _current_buffer->push_back(format, args);
 }
 int _async_sprintf(const char* format, ...)
 {
@@ -743,7 +773,7 @@ unsigned long _get_need_buffer_size(
         if (line > 0 && _check_level_format(level, EZLOG_FORMAT_LINE_INFO))
         {
             char temp[16] = {0};
-            sprintf(temp, "%d", line);
+            sprintf_s(temp, "%d", line);
             need_size += (9 + ::strlen(temp));
         }
 

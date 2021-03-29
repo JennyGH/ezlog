@@ -1,4 +1,4 @@
-PROJECT(ezlog VERSION 1.0.0.0 DESCRIPTION "ezlog static library")
+PROJECT(ezlog VERSION 1.0.0 DESCRIPTION "ezlog static library")
 
 FILE(GLOB_RECURSE INCLUDE_FILES
     ${PROJECT_SOURCE_DIR}/*.h

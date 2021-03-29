@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "ezlog_utils.h"
 #include "ezlog_stream.h"
-#include "ezlog_platform_compatibility.h"
+#include "platform_compatibility.h"
 
 long _get_file_size(FILE* stream)
 {
@@ -43,6 +43,10 @@ void ezlog_stream::load(const char* path, const char* mode)
     if (::stricmp(path, EZLOG_STDOUT) == 0)
     {
         m_file_ptr = stdout;
+    }
+    else if (::stricmp(path, EZLOG_STDERR) == 0)
+    {
+        m_file_ptr = stderr;
     }
     else
     {

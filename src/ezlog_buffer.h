@@ -4,25 +4,25 @@
 class ezlog_buffer
 {
 public:
-    ezlog_buffer(unsigned long size);
+    ezlog_buffer(size_t size);
     ~ezlog_buffer();
 
-    void resize(unsigned long new_size);
+    void resize(size_t new_size);
 
-    int snprintf(const char* format, ...);
+    int push_back(const char* format, ...);
 
-    int vsnprintf(const char* format, va_list args);
+    int push_back(const char* format, va_list args);
 
     size_t flush(FILE* dest_stream);
 
-    unsigned long get_remain_size() const;
+    size_t get_remain_size() const;
 
     void clear();
 
 private:
-    char*         m_buffer;
-    unsigned long m_size;
-    unsigned long m_remain;
+    char*  m_buffer;
+    size_t m_size;
+    size_t m_remain;
 };
 
 #endif // !_EZLOG_BUFFER_H_

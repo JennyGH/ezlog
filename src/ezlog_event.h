@@ -6,13 +6,20 @@ extern "C"
 {
 #endif // __cplusplus
 
-    void ezlog_event_init();
+#define EZLOG_EVENT_SUCCESS 1
+#define EZLOG_EVENT_FAIL    0
+#define EZLOG_EVENT_TIMEOUT -1
 
-    void* ezlog_event_wait();
+    struct ezlog_event_t;
+    typedef ezlog_event_t* ezlog_event;
 
-    void ezlog_event_notify(void* wait_context);
+    ezlog_event ezlog_event_create();
 
-    void ezlog_event_deinit();
+    int ezlog_event_wait(ezlog_event event, void** context, int seconds);
+
+    void ezlog_event_notify(ezlog_event event, void* context);
+
+    void ezlog_event_destroy(ezlog_event event);
 
 #ifdef __cplusplus
 }

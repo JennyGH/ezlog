@@ -1,5 +1,5 @@
 #include "ezlog_utils.h"
-#include "ezlog_platform_compatibility.h"
+#include "platform_compatibility.h"
 #include <time.h>
 #include <stdio.h>
 
