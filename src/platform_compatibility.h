@@ -190,6 +190,22 @@ pid_t __gettid();
 #        define UINT_MAX 0xffffffff
 #    endif // !UINT_MAX
 
+#    ifndef SOCKET
+#        define SOCKET int
+#    endif // !SOCKET
+
+#    ifndef INVALID_SOCKET
+#        define INVALID_SOCKET ((SOCKET)(~0))
+#    endif // !INVALID_SOCKET
+
+#    ifndef SOCKET_ERROR
+#        define SOCKET_ERROR (-1)
+#    endif // !SOCKET_ERROR
+
+#    ifndef closesocket
+#        define closesocket(socket) close(socket)
+#    endif // !closesocket
+
 #endif // _MSC_VER
 
 #endif // !_PLATFORM_COMPATIBILITY_H_
