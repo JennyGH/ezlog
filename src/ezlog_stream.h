@@ -18,7 +18,7 @@ public:
 
     unsigned long get_size();
 
-    const char* get_opened_path() const;
+    const char* get_path() const;
 
     operator FILE*() const;
 

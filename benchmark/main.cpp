@@ -18,10 +18,18 @@
 #define ROLL_SIZE      (1024 * 1024 * 10)
 #define BENCHMARK_UNIT benchmark::kMillisecond
 
+#define LOG_DIR "logs"
+#if WIN32
+#    define REMOVE_ALL_LOG_FILES()    /*system("DEL /f /s /q \"" LOG_DIR       \
+                                         "\\*.log\"")*/
+#else
+#    define REMOVE_ALL_LOG_FILES() system("rm -f " LOG_DIR "/*")
+#endif // WIN32
+
 #define INIT_LOG_CONFIGS(async_buffer_size, roll_size)                         \
     do                                                                         \
     {                                                                          \
-        system("rm -f /var/log/ezlog_benchmark_test/*");                       \
+        REMOVE_ALL_LOG_FILES();                                                \
         ezlog_init();                                                          \
         ezlog_set_log_roll_enabled((roll_size) > 0);                           \
         ezlog_set_log_color_enabled(true);                                     \
@@ -73,11 +81,7 @@ static const char* get_output_path_hook()
     static unsigned int index     = 0;
     static char         path[256] = {0};
 
-    snprintf(
-        path,
-        sizeof(path),
-        "/var/log/ezlog_benchmark_test/%d.log",
-        index++);
+    snprintf(path, sizeof(path), LOG_DIR "/%d.log", index++);
 
     return path;
 }

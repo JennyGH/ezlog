@@ -575,7 +575,7 @@ void _try_roll_log()
             }
             const char* path = g_get_output_path_hook();
             // If not the same path.
-            if (::stricmp(path, g_stream.get_opened_path()) != 0)
+            if (::stricmp(path, g_stream.get_path()) != 0)
             {
                 // Then set it to g_log_path, and update g_stream;
                 g_stream.load(path);
@@ -616,7 +616,8 @@ void _if_stream_is_not_opened(const ezlog_stream& stream)
         NULL,
         NULL,
         0,
-        "Output stream is not opened.");
+        "Unable to open the stream from \"%s\".",
+        stream.get_path());
     _EZLOG_ASSERT(stream.is_opened());
 }
 

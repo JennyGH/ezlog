@@ -36,7 +36,7 @@ ezlog_stream::~ezlog_stream()
 
 void ezlog_stream::load(const char* path, const char* mode)
 {
-    if (::stricmp(path, this->get_opened_path()) != 0)
+    if (::stricmp(path, this->get_path()) != 0)
     {
         this->close();
     }
@@ -65,7 +65,7 @@ void ezlog_stream::close()
 
 bool ezlog_stream::is_file() const
 {
-    return ::stricmp(this->get_opened_path(), EZLOG_STDOUT) != 0;
+    return ::stricmp(this->get_path(), EZLOG_STDOUT) != 0;
 }
 
 bool ezlog_stream::is_opened() const
@@ -87,7 +87,7 @@ unsigned long ezlog_stream::get_size()
     return res;
 }
 
-const char* ezlog_stream::get_opened_path() const
+const char* ezlog_stream::get_path() const
 {
     return m_path.c_str();
 }

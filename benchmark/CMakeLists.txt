@@ -19,11 +19,17 @@ ADD_EXECUTABLE(
     ${SOURCE_FILES}
 )
 
+IF(MSVC)
+    SET(EX_LINK_LIBRARIES shlwapi)
+ELSE()
+    SET(EX_LINK_LIBRARIES pthread)
+ENDIF() # ENDIF MSVC
+
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}
+    ${EX_LINK_LIBRARIES}
     ezlog
-    pthread
-    benchmark
+    benchmark::benchmark
 )
 
 INSTALL(
