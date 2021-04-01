@@ -95,28 +95,11 @@ LINK_DIRECTORIES(
 #   ${CMAKE_SOURCE_DIR}/3rd/xxxlib/lib
 )
 
-# Replace /MD to /MT compile mode while using MSVC compiler.
-# Default compile mode is /MD
-IF(MSVC)
-    SET(
-        CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELEASE
-    )
-    FOREACH(CompilerFlag ${CompilerFlags})
-        STRING(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-    ENDFOREACH()
-ENDIF(MSVC)
-
 # Add sub dirctories.
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(test)
 IF(benchmark_FOUND)
     ADD_SUBDIRECTORY(benchmark)
-ENDIF() # ENDIF NOT MSVC
+ENDIF() # ENDIF benchmark_FOUND
 
 SET_TARGET_PROPERTIES(${PRJ_TARGET} PROPERTIES FOLDER "CMakePredefinedTargets")

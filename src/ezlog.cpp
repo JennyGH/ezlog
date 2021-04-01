@@ -79,6 +79,13 @@ typedef void* thread_arg_t;
 
 #define _scoped_lock    ezlog_scoped_lock _lock_(g_lock)
 #define _current_buffer ((g_async_buffers[g_async_buffer_index]))
+#define _try_flush_buffer(buffer)                                              \
+    do                                                                         \
+    {                                                                          \
+        _scoped_lock;                                                          \
+        (buffer)->flush(g_stream);                                             \
+        (buffer)->clear();                                                     \
+    } while (0)
 
 typedef int (*sprintf_hook_t)(const char*, ...);
 typedef int (*vsprintf_hook_t)(const char*, va_list);
@@ -230,6 +237,8 @@ static void _if_stream_is_not_opened(const ezlog_stream& stream);
 static void
 _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
 
+static void _try_release_async_buffers();
+
 static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 {
     {
@@ -256,9 +265,9 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
             // If event timeout, output current buffer to stream.
             if (EZLOG_EVENT_TIMEOUT == rv)
             {
-                _scoped_lock;
-                _current_buffer->flush(g_stream);
-                _current_buffer->clear();
+                _try_init_output_stream();
+                _try_roll_log();
+                _try_flush_buffer(_current_buffer);
             }
             continue;
         }
@@ -272,16 +281,15 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
         _try_init_output_stream();
         _try_roll_log();
-
-        _scoped_lock;
-        full_buffer->flush(g_stream);
-        full_buffer->clear();
+        _try_flush_buffer(full_buffer);
     }
 
     {
         _scoped_lock;
         g_is_async_thread_running = false;
     }
+
+    ezlog_event_notify(g_event, NULL);
     return ((thread_return_t)0);
 }
 
@@ -466,24 +474,32 @@ void ezlog_write_hex(
 
 void ezlog_deinit()
 {
-    _scoped_lock;
-    g_stream.close();
-    if (g_async_mode_enabled)
+    bool is_async_mode = false;
     {
+        _scoped_lock;
+        is_async_mode = g_async_mode_enabled;
+    }
+
+    if (is_async_mode)
+    {
+        // Notify the async log thread.
         ezlog_event_notify(g_event, NULL);
+        // Wait for async log thread exit.
+        ezlog_event_wait(g_event, NULL, EZLOG_INFINITE);
         ezlog_event_destroy(g_event);
+
+        _try_init_output_stream();
+        _try_roll_log();
+        _try_flush_buffer(_current_buffer);
+        _try_release_async_buffers();
     }
-    std::size_t buffer_count = g_async_buffers.size();
-    for (std::size_t i = 0; i < buffer_count; i++)
+
+    // Lock and close the output stream.
     {
-        ezlog_buffer*& ptr = g_async_buffers[i];
-        if (NULL != ptr)
-        {
-            delete ptr;
-            ptr = NULL;
-        }
+        _scoped_lock;
+        g_stream.close();
+        g_is_inited = false;
     }
-    g_is_inited = false;
 }
 
 bool _default_flush_hook(unsigned long file_size)
@@ -653,6 +669,21 @@ void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
     ::pthread_create(&thread_id, &thread_attr, func, arg);
     ::pthread_attr_destroy(&thread_attr);
 #endif // _MSC_VER
+}
+
+void _try_release_async_buffers()
+{
+    _scoped_lock;
+    std::size_t buffer_count = g_async_buffers.size();
+    for (std::size_t i = 0; i < buffer_count; i++)
+    {
+        ezlog_buffer*& ptr = g_async_buffers[i];
+        if (NULL != ptr)
+        {
+            delete ptr;
+            ptr = NULL;
+        }
+    }
 }
 
 int _stderr_vsprintf(const char* format, va_list args)
