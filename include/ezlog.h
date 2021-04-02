@@ -35,13 +35,28 @@ extern "C"
 
 #define EZLOG_INFINITE 0xffffffff
 
+    /**
+     * 触发 EZLOG_ASSERT 时的钩子函数
+     * @param expr 触发 EZLOG_ASSERT 的表达式
+     * @param file 触发 EZLOG_ASSERT 的文件路径
+     * @param line 触发 EZLOG_ASSERT 的代码行号
+     */
     typedef void (*ezlog_assert_hook_t)(
         const char*  expr,
         const char*  file,
         unsigned int line);
 
+    /**
+     * 获取日志输出路径的钩子函数
+     * @return 要输出的日志路径
+     */
     typedef const char* (*ezlog_get_output_path_hook_t)();
 
+    /**
+     * 日志滚动钩子函数
+     * @param file_size 当前日志文件大小
+     * @return 返回真值会创建并重定向输出到新的日志文件
+     */
     typedef bool (*ezlog_roll_hook_t)(unsigned long file_size);
 
     /**
@@ -76,7 +91,8 @@ extern "C"
 
     /**
      * 设置异步模式时更新输出流的时间间隔
-     * @param seconds 间隔秒数，如果为 EZLOG_INFINITE 则只会在异步缓冲区满时更新输出流，默认为 EZLOG_INFINITE
+     * @param seconds 间隔秒数，如果为 EZLOG_INFINITE
+     * 则只会在异步缓冲区满时更新输出流，默认为 EZLOG_INFINITE
      */
     void ezlog_set_async_update_interval(unsigned int seconds);
 
@@ -131,7 +147,7 @@ extern "C"
         unsigned long        count_of_bytes);
 
     /**
-     * 反初始化，释放日志库资源
+     * 反初始化，释放日志库资源，如果使用异步模式，将会输出异步缓冲区中剩余的日志
      */
     void ezlog_deinit();
 
