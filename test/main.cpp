@@ -141,15 +141,8 @@ static const char* get_output_path_hook()
     }
     else
     {
-        static unsigned int index     = 0;
-        static char         path[256] = {0};
-        snprintf(
-            path,
-            sizeof(path),
-            "%s/test_%d.log",
-            g_test_config.output_dir.c_str(),
-            index++);
-        return path;
+        static std::string  path  = g_test_config.output_dir + "/test.log";
+        return path.c_str();
     }
 }
 

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <ezlog.h>
 #include "ezlog_utils.h"
 #include "ezlog_event.h"
@@ -83,8 +84,14 @@ typedef void* thread_arg_t;
     do                                                                         \
     {                                                                          \
         _scoped_lock;                                                          \
-        (buffer)->flush(g_stream);                                             \
-        (buffer)->clear();                                                     \
+        if (!(buffer)->is_empty())                                             \
+        {                                                                      \
+            if (g_stream.is_opened())                                          \
+            {                                                                  \
+                (buffer)->flush(g_stream);                                     \
+            }                                                                  \
+            (buffer)->clear();                                                 \
+        }                                                                      \
     } while (0)
 
 typedef int (*sprintf_hook_t)(const char*, ...);
@@ -202,16 +209,17 @@ static bool        _is_valid_level(unsigned int level);
 static bool        _is_writable_level(unsigned int level);
 static bool        _check_level_format(unsigned int level, unsigned int fmt);
 static const char* _get_level_color(unsigned int level);
+
 /*
  * NOT THREAD SAFE!!!
+ * Roll the output stream.
+ */
+static void _roll_output_stream();
+/*
+ * THREAD SAFE.
  * Try to init the output stream.
  */
 static void _try_init_output_stream();
-/*
- * NOT THREAD SAFE!!!
- * Try to roll log file
- */
-static void _try_roll_log();
 /*
  * NOT THREAD SAFE!!!
  * Switch current buffer and full buffer.
@@ -232,7 +240,6 @@ static int _stderr_vsprintf(const char* format, va_list args);
 static int _stderr_sprintf(const char* format, ...);
 
 static void _if_no_large_enough_async_buffer(const unsigned long& need_size);
-static void _if_stream_is_not_opened(const ezlog_stream& stream);
 
 static void
 _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
@@ -266,7 +273,6 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
             if (EZLOG_EVENT_TIMEOUT == rv)
             {
                 _try_init_output_stream();
-                _try_roll_log();
                 _try_flush_buffer(_current_buffer);
             }
             continue;
@@ -280,7 +286,6 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
         }
 
         _try_init_output_stream();
-        _try_roll_log();
         _try_flush_buffer(full_buffer);
     }
 
@@ -489,7 +494,6 @@ void ezlog_deinit()
         ezlog_event_destroy(g_event);
 
         _try_init_output_stream();
-        _try_roll_log();
         _try_flush_buffer(_current_buffer);
         _try_release_async_buffers();
     }
@@ -561,40 +565,68 @@ const char* _get_level_color(unsigned int level)
     return g_log_level_colors[level];
 }
 
+void _roll_output_stream()
+{
+    static size_t      roll_index = 0;
+    static std::string old_path;
+    const char*        ptr = g_get_output_path_hook();
+    if (::stricmp(ptr, old_path.c_str()) != 0)
+    {
+        // If not the same file path, reset roll_index.
+        roll_index = 0;
+    }
+    std::string new_path = ptr == NULL ? "" : ptr;
+    old_path             = new_path;
+    if (!new_path.empty())
+    {
+        std::stringstream ss;
+        std::size_t       pos = new_path.find_last_of('.');
+        if (std::string::npos == pos)
+        {
+            ss << new_path << roll_index++;
+        }
+        else
+        {
+            ss << new_path.substr(0, pos);
+            ss << "(" << roll_index++ << ")";
+            ss << new_path.substr(pos);
+        }
+        ss >> new_path;
+    }
+    g_stream.load(new_path.c_str());
+}
+
 /*
  * THREAD SAFE.
  * Try to init the output stream.
  */
 void _try_init_output_stream()
 {
+    static size_t      roll_index = 0;
+    static std::string old_path;
+
     _scoped_lock;
-    if (!g_stream.is_opened())
+
+    if (!g_stream.is_opened() && !g_enabled_log_roll)
     {
         g_stream.load(g_get_output_path_hook());
+        return;
     }
-}
 
-/*
- * THREAD SAFE.
- * Try to roll log file
- */
-void _try_roll_log()
-{
-    _scoped_lock;
     if (g_enabled_log_roll)
     {
-        while (true)
+        if (!g_stream.is_opened())
         {
-            if (!g_roll_hook(g_stream.get_size()))
+            do
             {
-                break;
-            }
-            const char* path = g_get_output_path_hook();
-            // If not the same path.
-            if (::stricmp(path, g_stream.get_path()) != 0)
+                _roll_output_stream();
+            } while (g_roll_hook(g_stream.get_size()));
+        }
+        else
+        {
+            while (g_roll_hook(g_stream.get_size()))
             {
-                // Then set it to g_log_path, and update g_stream;
-                g_stream.load(path);
+                _roll_output_stream();
             }
         }
     }
@@ -621,20 +653,6 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
         g_async_buffer_size,
         need_size);
     _EZLOG_ASSERT(need_size <= g_async_buffer_size);
-}
-
-void _if_stream_is_not_opened(const ezlog_stream& stream)
-{
-    _sprintf_log(
-        _stderr_sprintf,
-        _stderr_vsprintf,
-        EZLOG_LEVEL_FATAL,
-        NULL,
-        NULL,
-        0,
-        "Unable to open the stream from \"%s\".",
-        stream.get_path());
-    _EZLOG_ASSERT(stream.is_opened());
 }
 
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
@@ -717,11 +735,6 @@ void _try_switch_current_async_buffer(const unsigned long& need_size)
 }
 int _sync_vsprintf(const char* format, va_list args)
 {
-    if (!g_stream.is_opened())
-    {
-        _if_stream_is_not_opened(g_stream);
-        return 0;
-    }
     return vfprintf_s(g_stream, format, args);
 }
 int _sync_sprintf(const char* format, ...)
@@ -875,8 +888,11 @@ void _sync_write_hex(
     const unsigned long& count_of_bytes)
 {
     _try_init_output_stream();
-    _try_roll_log();
     _scoped_lock;
+    if (!g_stream.is_opened())
+    {
+        return;
+    }
     _sprintf_hex(_sync_sprintf, _sync_vsprintf, name, bytes, count_of_bytes);
     ::fflush(g_stream);
 }
@@ -1023,8 +1039,11 @@ void _sync_write_log(
     va_list      args)
 {
     _try_init_output_stream();
-    _try_roll_log();
     _scoped_lock;
+    if (!g_stream.is_opened())
+    {
+        return;
+    }
     _vsprintf_log(
         _sync_sprintf,
         _sync_vsprintf,
@@ -1034,7 +1053,10 @@ void _sync_write_log(
         line,
         format,
         args);
-    ::fflush(g_stream);
+    if (g_stream.is_opened())
+    {
+        ::fflush(g_stream);
+    }
 }
 
 void _async_write_log(

@@ -17,6 +17,8 @@ public:
 
     size_t get_remain_size() const;
 
+    bool is_empty() const;
+
     void clear();
 
 private:

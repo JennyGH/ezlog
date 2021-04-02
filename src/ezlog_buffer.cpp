@@ -81,6 +81,11 @@ size_t ezlog_buffer::get_remain_size() const
     return m_remain;
 }
 
+bool ezlog_buffer::is_empty() const
+{
+    return m_remain == m_size;
+}
+
 void ezlog_buffer::clear()
 {
     if (NULL != m_buffer)

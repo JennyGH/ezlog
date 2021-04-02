@@ -221,8 +221,6 @@ int ezlog_event_wait(ezlog_event e, void** context, int seconds)
     if (NULL != context)
     {
         *context = e->context;
-        // Reset event context.
-        e->context = NULL;
     }
     return EZLOG_EVENT_SUCCESS;
 }

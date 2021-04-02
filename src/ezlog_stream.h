@@ -18,7 +18,7 @@ public:
 
     unsigned long get_size();
 
-    const char* get_path() const;
+    const std::string& get_path() const;
 
     operator FILE*() const;
 

@@ -97,12 +97,7 @@ static unsigned char g_test_bytes[39] = {0};
 
 static const char* get_output_path_hook()
 {
-    static unsigned int index     = 0;
-    static char         path[256] = {0};
-
-    snprintf(path, sizeof(path), LOG_DIR "/%d.log", index++);
-
-    return path;
+    return LOG_DIR "/ezlog_benchmark.log";
 }
 
 DECLARE_BENCHMARK_LOG_HEX_FUNCTION(sync_log, 0, 0);
