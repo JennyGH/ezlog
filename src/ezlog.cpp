@@ -575,6 +575,11 @@ void _roll_output_stream()
         // If not the same file path, reset roll_index.
         roll_index = 0;
     }
+    if (::stricmp(ptr, EZLOG_STDOUT) == 0 || ::stricmp(ptr, EZLOG_STDERR) == 0)
+    {
+        g_stream.load(ptr);
+        return;
+    }
     std::string new_path = ptr == NULL ? "" : ptr;
     old_path             = new_path;
     if (!new_path.empty())
