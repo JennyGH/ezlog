@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <vector>
 #include <string>
-#include <sstream>
 #include <ezlog.h>
+#include "atomic.h"
+#include "macros.h"
+#include "atomic.h"
 #include "ezlog_utils.h"
 #include "ezlog_event.h"
 #include "ezlog_stream.h"
@@ -16,67 +18,18 @@
 
 #if _MSC_VER
 #    include <Windows.h>
+#    define __threadcall __stdcall
 typedef DWORD  thread_return_t;
 typedef HANDLE thread_arg_t;
 #else
 #    include <sched.h>
 #    include <pthread.h>
-#    define __stdcall
+#    define __threadcall
 typedef void* thread_return_t;
 typedef void* thread_arg_t;
 #endif // _MSC_VER
 
-#ifndef NDEBUG
-#    define _EZLOG_ASSERT(expr) assert(expr)
-#else
-#    define _EZLOG_ASSERT(expr)                                                \
-        while (!(expr))                                                        \
-        {                                                                      \
-            sleep(1);                                                          \
-        }
-#endif // !NDEBUG
-
-#define EZLOG_COLOR_START "\033["
-#define EZLOG_COLOR_END   "\033[0m"
-// log front color
-#define EZLOG_FRONT_COLOR_BLACK   "30;"
-#define EZLOG_FRONT_COLOR_RED     "31;"
-#define EZLOG_FRONT_COLOR_GREEN   "32;"
-#define EZLOG_FRONT_COLOR_YELLOW  "33;"
-#define EZLOG_FRONT_COLOR_BLUE    "34;"
-#define EZLOG_FRONT_COLOR_MAGENTA "35;"
-#define EZLOG_FRONT_COLOR_CYAN    "36;"
-#define EZLOG_FRONT_COLOR_WHITE   "37;"
-// log background color
-#define EZLOG_BACK_COLOR_NULL
-#define EZLOG_BACK_COLOR_BLACK   "40;"
-#define EZLOG_BACK_COLOR_RED     "41;"
-#define EZLOG_BACK_COLOR_GREEN   "42;"
-#define EZLOG_BACK_COLOR_YELLOW  "43;"
-#define EZLOG_BACK_COLOR_BLUE    "44;"
-#define EZLOG_BACK_COLOR_MAGENTA "45;"
-#define EZLOG_BACK_COLOR_CYAN    "46;"
-#define EZLOG_BACK_COLOR_WHITE   "47;"
-// log fonts style
-#define EZLOG_FONT_STYLE_BOLD      "1m"
-#define EZLOG_FONT_STYLE_UNDERLINE "4m"
-#define EZLOG_FONT_STYLE_BLINK     "5m"
-#define EZLOG_FONT_STYLE_NORMAL    "22m"
-// log style
-#define EZLOG_COLOR_FATAL                                                      \
-    (EZLOG_FRONT_COLOR_MAGENTA EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_ERROR                                                      \
-    (EZLOG_FRONT_COLOR_RED EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_WARN                                                       \
-    (EZLOG_FRONT_COLOR_YELLOW EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_INFO                                                       \
-    (EZLOG_FRONT_COLOR_CYAN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_DEBUG                                                      \
-    (EZLOG_FRONT_COLOR_GREEN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_VERBOSE                                                    \
-    (EZLOG_FRONT_COLOR_WHITE EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-
-#define EZLOG_ASYNC_BUFFER_COUNT 2
+#define async_buffer_count 2
 
 #define _scoped_lock    ezlog_scoped_lock _lock_(g_lock)
 #define _current_buffer ((g_async_buffers[g_async_buffer_index]))
@@ -96,7 +49,8 @@ typedef void* thread_arg_t;
 
 typedef int (*sprintf_hook_t)(const char*, ...);
 typedef int (*vsprintf_hook_t)(const char*, va_list);
-typedef thread_return_t(__stdcall* async_thread_func_t)(thread_arg_t);
+typedef std::vector<ezlog_buffer*> ezlog_buffers_t;
+typedef thread_return_t(__threadcall* async_thread_func_t)(thread_arg_t);
 
 static const char* g_log_level_tags[] = {
     "[FATAL]  ",
@@ -123,21 +77,21 @@ static unsigned int g_level_format[] = {
     EZLOG_FORMAT_ALL,
 };
 static ezlog_stream                 g_stream;
-static ezlog_lock                   g_lock                    = NULL;
-static ezlog_event                  g_event                   = NULL;
-static bool                         g_async_mode_enabled      = false;
-static bool                         g_enabled_log_roll        = false;
-static bool                         g_enabled_log_color       = false;
-static bool                         g_is_inited               = false;
-static bool                         g_is_async_thread_running = false;
-static std::vector<ezlog_buffer*>   g_async_buffers;
-static size_t                       g_async_buffer_index    = 0;
-static size_t                       g_async_buffer_size     = 0;
-static size_t                       g_async_update_interval = EZLOG_INFINITE;
-static size_t                       g_log_level   = EZLOG_LEVEL_VERBOSE;
-static ezlog_roll_hook_t            g_roll_hook   = NULL;
-static ezlog_assert_hook_t          g_assert_hook = NULL;
+static ezlog_lock                   g_lock                 = NULL;
+static ezlog_event                  g_event                = NULL;
+static ezlog_roll_hook_t            g_roll_hook            = NULL;
+static ezlog_assert_hook_t          g_assert_hook          = NULL;
 static ezlog_get_output_path_hook_t g_get_output_path_hook = NULL;
+static std::atomic<bool>            g_is_async_mode_enabled(false);
+static std::atomic<bool>            g_is_roll_log_enabled(false);
+static std::atomic<bool>            g_is_color_log_enabled(false);
+static std::atomic<bool>            g_is_inited(false);
+static std::atomic<bool>            g_is_async_thread_running(false);
+static std::atomic<size_t>          g_async_buffer_index(0);
+static std::atomic<size_t>          g_async_buffer_size(0);
+static std::atomic<size_t>          g_async_update_interval(EZLOG_INFINITE);
+static std::atomic<size_t>          g_log_level(EZLOG_LEVEL_VERBOSE);
+static ezlog_buffers_t              g_async_buffers(async_buffer_count, NULL);
 
 static void _vsprintf_log(
     sprintf_hook_t  sprintf_hook,
@@ -246,7 +200,7 @@ _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
 
 static void _try_release_async_buffers();
 
-static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
+static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
 {
     {
         _scoped_lock;
@@ -300,53 +254,67 @@ static thread_return_t __stdcall _async_log_thread(thread_arg_t arg)
 
 int ezlog_init()
 {
+    if (g_is_inited)
+    {
+        return EZLOG_FAIL;
+    }
+
     g_lock = ezlog_lock_create();
-    _scoped_lock;
-    g_is_inited            = true;
-    g_async_buffer_index   = 0;
-    g_roll_hook            = _default_flush_hook;
-    g_assert_hook          = _default_assert_hook;
-    g_get_output_path_hook = _default_get_output_path_hook;
-    set_assert_hook(_default_assert_hook);
+    {
+        _scoped_lock;
+        g_roll_hook            = _default_flush_hook;
+        g_assert_hook          = _default_assert_hook;
+        g_get_output_path_hook = _default_get_output_path_hook;
+        set_assert_hook(_default_assert_hook);
+    }
+    g_is_inited = true;
     return EZLOG_SUCCESS;
 }
 
 void ezlog_set_async_mode_enabled(bool enable)
 {
-    _scoped_lock;
-    g_event              = ezlog_event_create();
-    g_async_mode_enabled = enable;
+    {
+        _scoped_lock;
+        g_event = ezlog_event_create();
+    }
+    g_is_async_mode_enabled = enable;
 }
 
 void ezlog_set_async_buffer_size(unsigned int size)
 {
-    _scoped_lock;
     if (size > 0)
     {
         g_async_buffer_size = size;
-        for (size_t i = 0; i < EZLOG_ASYNC_BUFFER_COUNT; i++)
+        _scoped_lock;
+        ezlog_buffers_t::iterator begin = g_async_buffers.begin();
+        ezlog_buffers_t::iterator end   = g_async_buffers.end();
+        for (; begin != end; begin++)
         {
-            g_async_buffers.push_back(new ezlog_buffer(size));
+            if (NULL == *begin)
+            {
+                (*begin) = (new ezlog_buffer(size));
+            }
+            else
+            {
+                (*begin)->resize(size);
+            }
         }
     }
 }
 
 void ezlog_set_async_update_interval(unsigned int seconds)
 {
-    _scoped_lock;
     g_async_update_interval = seconds;
 }
 
 void ezlog_set_log_roll_enabled(bool enable)
 {
-    _scoped_lock;
-    g_enabled_log_roll = enable;
+    g_is_roll_log_enabled = enable;
 }
 
 void ezlog_set_log_color_enabled(bool enable)
 {
-    _scoped_lock;
-    g_enabled_log_color = enable;
+    g_is_color_log_enabled = enable;
 }
 
 void ezlog_set_level(unsigned int level)
@@ -355,7 +323,6 @@ void ezlog_set_level(unsigned int level)
     {
         return;
     }
-    _scoped_lock;
     g_log_level = level;
 }
 
@@ -365,7 +332,6 @@ void ezlog_set_roll_hook(ezlog_roll_hook_t hook)
     {
         return;
     }
-    _scoped_lock;
     g_roll_hook = hook;
 }
 
@@ -405,6 +371,10 @@ void ezlog_assert(
     const char*  file,
     unsigned int line)
 {
+    if (!g_is_inited)
+    {
+        return;
+    }
     if (!condition)
     {
         g_assert_hook(expr, file, line);
@@ -424,17 +394,14 @@ void ezlog_write_log(
         return;
     }
 
+    if (!g_is_inited)
     {
-        _scoped_lock;
-        if (!g_is_inited)
-        {
-            return;
-        }
+        return;
     }
 
     va_list args;
     va_start(args, format);
-    if (g_async_mode_enabled)
+    if (g_is_async_mode_enabled)
     {
         // Start work thread.
         _try_start_async_log_thread(_async_log_thread, NULL);
@@ -457,15 +424,12 @@ void ezlog_write_hex(
         return;
     }
 
+    if (!g_is_inited)
     {
-        _scoped_lock;
-        if (!g_is_inited)
-        {
-            return;
-        }
+        return;
     }
 
-    if (g_async_mode_enabled)
+    if (g_is_async_mode_enabled)
     {
         // Start work thread.
         _try_start_async_log_thread(_async_log_thread, NULL);
@@ -479,13 +443,12 @@ void ezlog_write_hex(
 
 void ezlog_deinit()
 {
-    bool is_async_mode = false;
+    if (!g_is_inited)
     {
-        _scoped_lock;
-        is_async_mode = g_async_mode_enabled;
+        return;
     }
 
-    if (is_async_mode)
+    if (g_is_async_mode_enabled)
     {
         // Notify the async log thread.
         ezlog_event_notify(g_event, NULL);
@@ -502,8 +465,8 @@ void ezlog_deinit()
     {
         _scoped_lock;
         g_stream.close();
-        g_is_inited = false;
     }
+    g_is_inited = false;
 }
 
 bool _default_flush_hook(unsigned long file_size)
@@ -569,34 +532,30 @@ void _roll_output_stream()
 {
     static size_t      roll_index = 0;
     static std::string old_path;
-    const char*        ptr = g_get_output_path_hook();
+
+    const char* ptr = g_get_output_path_hook();
     if (::stricmp(ptr, old_path.c_str()) != 0)
     {
         // If not the same file path, reset roll_index.
         roll_index = 0;
     }
-    if (::stricmp(ptr, EZLOG_STDOUT) == 0 || ::stricmp(ptr, EZLOG_STDERR) == 0)
-    {
-        g_stream.load(ptr);
-        return;
-    }
     std::string new_path = ptr == NULL ? "" : ptr;
     old_path             = new_path;
-    if (!new_path.empty())
+    if (!new_path.empty() && ::stricmp(ptr, EZLOG_STDOUT) != 0 &&
+        ::stricmp(ptr, EZLOG_STDERR) != 0)
     {
-        std::stringstream ss;
-        std::size_t       pos = new_path.find_last_of('.');
-        if (std::string::npos == pos)
+        char        index[32] = {0};
+        std::size_t found     = new_path.find_last_of('.');
+        snprintf(index, sizeof(index), "%u", roll_index++);
+        if (std::string::npos == found)
         {
-            ss << new_path << roll_index++;
+            new_path.append(index);
         }
         else
         {
-            ss << new_path.substr(0, pos);
-            ss << "(" << roll_index++ << ")";
-            ss << new_path.substr(pos);
+            new_path = new_path.substr(0, found) + "(" + index + ")" +
+                       new_path.substr(found);
         }
-        ss >> new_path;
     }
     g_stream.load(new_path.c_str());
 }
@@ -607,18 +566,15 @@ void _roll_output_stream()
  */
 void _try_init_output_stream()
 {
-    static size_t      roll_index = 0;
-    static std::string old_path;
-
     _scoped_lock;
 
-    if (!g_stream.is_opened() && !g_enabled_log_roll)
+    if (!g_stream.is_opened() && !g_is_roll_log_enabled)
     {
         g_stream.load(g_get_output_path_hook());
         return;
     }
 
-    if (g_enabled_log_roll)
+    if (g_is_roll_log_enabled)
     {
         if (!g_stream.is_opened())
         {
@@ -655,7 +611,7 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
         NULL,
         0,
         "No buffer is large enough to sprintf log content, g_async_buffer_size: %ld, need_size: %ld",
-        g_async_buffer_size,
+        (int)g_async_buffer_size,
         need_size);
     _EZLOG_ASSERT(need_size <= g_async_buffer_size);
 }
@@ -663,12 +619,9 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
 {
     // Lock and check if the backend thread is running.
+    if (g_is_async_thread_running)
     {
-        _scoped_lock;
-        if (g_is_async_thread_running)
-        {
-            return;
-        }
+        return;
     }
 #if _MSC_VER
     HANDLE hThread = ::CreateThread(NULL, 0, func, arg, 0, NULL);
@@ -723,12 +676,12 @@ int _stderr_sprintf(const char* format, ...)
 }
 void _try_switch_current_async_buffer(const unsigned long& need_size)
 {
-    _scoped_lock;
     if (need_size > g_async_buffer_size)
     {
         _if_no_large_enough_async_buffer(need_size);
         return;
     }
+    _scoped_lock;
     if (need_size > _current_buffer->get_remain_size())
     {
         // If not, try to switch buffer.
@@ -774,7 +727,7 @@ unsigned long _get_need_buffer_size(
     unsigned long need_size  = 0;
     const char*   color_info = _get_level_color(level);
     // Try write color info.
-    if (g_enabled_log_color)
+    if (g_is_color_log_enabled)
     {
         if (NULL != color_info)
         {
@@ -843,7 +796,7 @@ unsigned long _get_need_buffer_size(
     }
 
     // Try write color info.
-    if (g_enabled_log_color)
+    if (g_is_color_log_enabled)
     {
         if (NULL != color_info)
         {
@@ -933,7 +886,7 @@ void _vsprintf_log(
     }
     const char* color_info = _get_level_color(level);
     // Try write color info.
-    if (g_enabled_log_color)
+    if (g_is_color_log_enabled)
     {
         if (NULL != color_info)
         {
@@ -1000,7 +953,7 @@ void _vsprintf_log(
     }
 
     // Try write color info.
-    if (g_enabled_log_color)
+    if (g_is_color_log_enabled)
     {
         if (NULL != color_info)
         {

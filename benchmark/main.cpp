@@ -69,6 +69,7 @@
                     LOG_HEX(g_test_bytes, sizeof(g_test_bytes));               \
                 }                                                              \
             }                                                                  \
+            ezlog_deinit();                                                    \
         }                                                                      \
         BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
 
@@ -90,6 +91,7 @@
                     LOG_DEBUG("test debug log: %d", 123456789);                \
                 }                                                              \
             }                                                                  \
+            ezlog_deinit();                                                    \
         }                                                                      \
         BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
 
