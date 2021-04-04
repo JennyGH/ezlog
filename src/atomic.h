@@ -40,6 +40,10 @@ namespace std
             : _val(T())
         {
         }
+        atomic(const T& val)
+            : _val(val)
+        {
+        }
         atomic(const atomic& that)
             : _val(that._val)
         {
@@ -74,7 +78,7 @@ namespace std
             return *this;
         }
 
-        atomic operator++(T)
+        atomic operator++(int)
         {
             atomic old = *this;
             atomic_inc(_val);
@@ -87,7 +91,7 @@ namespace std
             return *this;
         }
 
-        atomic operator--(T)
+        atomic operator--(int)
         {
             atomic old = *this;
             atomic_dec(_val);
@@ -115,4 +119,4 @@ namespace std
     };
 } // namespace std
 #    endif     // __cpp11
-#endif // !_ATOMIC_H_
+#endif         // !_ATOMIC_H_

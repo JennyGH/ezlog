@@ -202,24 +202,17 @@ static void _try_release_async_buffers();
 
 static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
 {
-    {
-        _scoped_lock;
-        g_is_async_thread_running = true;
-    }
+    g_is_async_thread_running = true;
 
     while (true)
     {
         int           rv          = 0;
-        size_t        interval    = EZLOG_INFINITE;
         ezlog_buffer* full_buffer = NULL;
 
-        // Get flush interval.
-        {
-            _scoped_lock;
-            interval = g_async_update_interval;
-        }
-
-        rv = ezlog_event_wait(g_event, (void**)&full_buffer, interval);
+        rv = ezlog_event_wait(
+            g_event,
+            (void**)&full_buffer,
+            g_async_update_interval);
 
         if (EZLOG_EVENT_SUCCESS != rv)
         {
@@ -243,10 +236,7 @@ static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
         _try_flush_buffer(full_buffer);
     }
 
-    {
-        _scoped_lock;
-        g_is_async_thread_running = false;
-    }
+    g_is_async_thread_running = false;
 
     ezlog_event_notify(g_event, NULL);
     return ((thread_return_t)0);
@@ -618,8 +608,8 @@ void _if_no_large_enough_async_buffer(const unsigned long& need_size)
 
 void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
 {
-    // Lock and check if the backend thread is running.
-    if (g_is_async_thread_running)
+    // Check if `ezlog_init` has been called and the backend thread is running.
+    if (!g_is_inited || g_is_async_thread_running)
     {
         return;
     }
@@ -852,7 +842,10 @@ void _sync_write_hex(
         return;
     }
     _sprintf_hex(_sync_sprintf, _sync_vsprintf, name, bytes, count_of_bytes);
-    ::fflush(g_stream);
+    if (g_stream.is_opened())
+    {
+        ::fflush(g_stream);
+    }
 }
 
 void _async_write_hex(

@@ -26,7 +26,6 @@
 
 #if __cpp11
 #    define LOG_COUNT      100000
-#    define THREAD_COUNT   1
 #    define ASYNC_SIZE     (1024 * 1024)
 #    define ROLL_SIZE      (1024 * 1024 * 10)
 #    define BENCHMARK_UNIT benchmark::kMillisecond
@@ -71,7 +70,7 @@
             }                                                                  \
             ezlog_deinit();                                                    \
         }                                                                      \
-        BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
+        BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)
 
 #    define DECLARE_BENCHMARK_LOG_FMT_FUNCTION(                                \
         name,                                                                  \
@@ -93,7 +92,7 @@
             }                                                                  \
             ezlog_deinit();                                                    \
         }                                                                      \
-        BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)->Threads(THREAD_COUNT)
+        BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)
 
 static unsigned char g_test_bytes[39] = {0};
 
