@@ -1,14 +1,8 @@
 *        text=auto
-*.cs     text diff=csharp
-*.java   text diff=java
-*.html   text diff=html
-*.css    text
-*.js     text
-*.sql    text
-*.csproj text merge=union
-*.sln    text merge=union eol=crlf
-*.docx   diff=astextplain
-*.DOCX   diff=astextplain
+*.c      text diff=cpp
+*.h      text diff=cpp
+*.hpp    text diff=cpp
+*.cpp    text diff=cpp
 *.sh     text eol=lf
 *.bat    text eol=crlf
 *.rc     text eol=crlf
