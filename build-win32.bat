@@ -3,13 +3,24 @@ SETLOCAL
 
 REM =============== Set some local variables here. ===============
 REM You can change the name of build directory here:
-SET BUILD_DIR_NAME=build-win32
+SET TARGET_ARCH=%1
+IF "%TARGET_ARCH%" == "" (
+    SET TARGET_ARCH=x86
+)
+@ECHO Target arch: %TARGET_ARCH%
+SET BUILD_DIR_NAME=build-win-%TARGET_ARCH%
+CALL:Build Debug
+CALL:Build Release
+GOTO:EOF
+
+:Build
+SET PROJECT_ROOT=%CD%
 
 REM Specify build type:
-SET BUILD_TYPE=Release
+SET BUILD_TYPE=%1
 
 REM Specify install dir, binary files will be installed to here:
-SET INSTALL_DIR="%CD%/built/win32"
+SET INSTALL_DIR="%PROJECT_ROOT%/built/windows/%TARGET_ARCH%/%BUILD_TYPE%"
 
 REM =================== Try to make directory. ===================
 IF NOT EXIST %BUILD_DIR_NAME% (
@@ -26,5 +37,8 @@ CALL cmake -G "NMake Makefiles"                 ^
             
 CALL cmake --build . --config %BUILD_TYPE% --target INSTALL
 
-CD ..
+CD %PROJECT_ROOT%
+
+GOTO:EOF
+
 ENDLOCAL

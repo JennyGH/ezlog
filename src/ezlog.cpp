@@ -520,8 +520,8 @@ const char* _get_level_color(unsigned int level)
 
 void _roll_output_stream()
 {
-    static size_t      roll_index = 0;
-    static std::string old_path;
+    static unsigned int roll_index = 0;
+    static std::string  old_path;
 
     const char* ptr = g_get_output_path_hook();
     if (::stricmp(ptr, old_path.c_str()) != 0)

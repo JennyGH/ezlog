@@ -4,25 +4,35 @@
 # You can change the name of build directory here:
 BUILD_DIR_NAME=build-linux
 
-# Specify build type:
-BUILD_TYPE=Release
+# Save project root path.
+PROJECT_ROOT=`pwd`
 
-# Specify install dir, binary files will be installed to here:
-INSTALL_DIR=`pwd`/built/linux
+# Get processor name.
+PROCESSOR=`uname -p`
 
-# =================== Try to make directory. ===================
-if [ ! -d $BUILD_DIR_NAME ]; then
-    mkdir $BUILD_DIR_NAME
-fi
-# ==============================================================
-cd $BUILD_DIR_NAME
+function build() {
+    # Specify build type:
+    BUILD_TYPE=$1
 
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE        \
-      -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
-      -DCMAKE_C_COMPILER=/usr/bin/gcc       \
-      -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
-      ..
-cmake --build . --config $BUILD_TYPE
-make install
+    # Specify install dir, binary files will be installed to here:
+    INSTALL_DIR=$PROJECT_ROOT/built/linux/$PROCESSOR/$BUILD_TYPE
 
-cd ..
+    # =================== Try to make directory. ===================
+    if [ ! -d $BUILD_DIR_NAME ]; then
+        mkdir $BUILD_DIR_NAME
+    fi
+    # ==============================================================
+    cd $BUILD_DIR_NAME
+
+    cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE        \
+          -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+          -DCMAKE_C_COMPILER=/usr/bin/gcc       \
+          -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
+          ..
+    cmake --build . --config $BUILD_TYPE
+    make install
+    cd "$PROJECT_ROOT"
+}
+
+build Debug
+build Release
