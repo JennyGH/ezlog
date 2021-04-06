@@ -6,6 +6,7 @@
 #include <string.h>
 
 #ifdef _MSC_VER
+#    include <process.h>
 #    include <Windows.h>
 #    ifndef sleep
 #        define sleep(sec) ::Sleep(int(sec) * 1000)
@@ -18,10 +19,6 @@
 #    ifndef snprintf
 #        define snprintf _snprintf
 #    endif // !snprintf
-
-#    ifndef getpid
-#        define getpid GetCurrentProcessId
-#    endif // !getpid
 
 #    ifndef localtime_r
 #        define localtime_r(_Time, _Tm) localtime_s(((_Tm), (_Time))
@@ -50,6 +47,8 @@ typedef void (*assert_hook_t)(const char*, const char*, unsigned int);
 
 void set_assert_hook(assert_hook_t hook);
 
+#    ifndef memcpy_s
+#        define __no_memcpy_s
 void __memcpy_s(
     const char* file,
     size_t      line,
@@ -57,7 +56,10 @@ void __memcpy_s(
     size_t      dest_size,
     const void* src,
     size_t      src_size);
+#    endif // !memcpy_s
 
+#    ifndef vsprintf_s
+#        define __no_vsprintf_s
 int __vsprintf_s(
     const char* file,
     size_t      line,
@@ -76,7 +78,10 @@ int __vsprintf_s(
 {
     return __vsprintf_s(file, line, dest, dest_size, format, args);
 }
+#    endif // !vsprintf_s
 
+#    ifndef sprintf_s
+#        define __no_sprintf_s
 int __sprintf_s(
     const char* file,
     size_t      line,
@@ -99,14 +104,20 @@ int __sprintf_s(
     va_end(args);
     return rc;
 }
+#    endif // !sprintf_s
 
+#    ifndef sscanf_s
+#        define __no_sscanf_s
 int __sscanf_s(
     const char* file,
     size_t      line,
     const char* buffer,
     const char* format,
     ...);
+#    endif // !sscanf_s
 
+#    ifndef strcpy_s
+#        define __no_strcpy_s
 int __strcpy_s(
     const char* file,
     size_t      line,
@@ -123,6 +134,7 @@ int __strcpy_s(
 {
     return __strcpy_s(file, line, dest, dest_size, src);
 }
+#    endif // !strcpy_s
 
 pid_t __gettid();
 

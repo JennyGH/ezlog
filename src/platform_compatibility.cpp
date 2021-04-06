@@ -34,6 +34,7 @@ void set_assert_hook(assert_hook_t hook)
     }
 }
 
+#    ifdef __no_memcpy_s
 void __memcpy_s(
     const char* file,
     size_t      line,
@@ -46,7 +47,9 @@ void __memcpy_s(
     __ASSERT(dest_size >= src_size);
     memcpy(dest, src, src_size);
 }
+#    endif // __no_memcpy_s
 
+#    ifdef __no_vsprintf_s
 int __vsprintf_s(
     const char* file,
     size_t      line,
@@ -62,7 +65,9 @@ int __vsprintf_s(
     __ASSERT(dest_size >= sprintfed_size);
     return sprintfed_size;
 }
+#    endif // __no_vsprintf_s
 
+#    ifdef __no_sprintf_s
 int __sprintf_s(
     const char* file,
     size_t      line,
@@ -78,7 +83,9 @@ int __sprintf_s(
     va_end(args);
     return rc;
 }
+#    endif // __no_sprintf_s
 
+#    ifdef __no_sscanf_s
 int __sscanf_s(
     const char* file,
     size_t      line,
@@ -94,7 +101,9 @@ int __sscanf_s(
     va_end(args);
     return sscanfed_size;
 }
+#    endif // __no_sscanf_s
 
+#    ifdef __no_strcpy_s
 int __strcpy_s(
     const char* file,
     size_t      line,
@@ -109,6 +118,7 @@ int __strcpy_s(
     strcpy(dest, src);
     return src_size;
 }
+#    endif // __no_strcpy_s
 
 pid_t __gettid()
 {
