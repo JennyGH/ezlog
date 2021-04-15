@@ -51,19 +51,22 @@ namespace std
 
         ~atomic() {}
 
-        atomic& operator+(const T& val)
+        template <typename U>
+        atomic& operator+(const U& val)
         {
             atomic_add(_val, val);
             return *this;
         }
 
-        atomic& operator-(const T& val)
+        template <typename U>
+        atomic& operator-(const U& val)
         {
             atomic_sub(_val, val);
             return *this;
         }
 
-        atomic& operator=(const T& val)
+        template <typename U>
+        atomic& operator=(const U& val)
         {
             atomic_swap(_val, val);
             return *this;

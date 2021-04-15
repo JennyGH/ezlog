@@ -1,0 +1,16 @@
+EXPORTS
+    ezlog_init
+    ezlog_set_log_roll_enabled
+    ezlog_set_log_color_enabled
+    ezlog_set_async_mode_enabled
+    ezlog_set_async_buffer_size
+    ezlog_set_async_update_interval
+    ezlog_set_level
+    ezlog_set_roll_hook
+    ezlog_set_assert_hook
+    ezlog_set_get_output_path_hook
+    ezlog_set_format
+    ezlog_assert
+    ezlog_write_log
+    ezlog_write_hex
+    ezlog_deinit
