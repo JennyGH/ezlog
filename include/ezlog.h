@@ -2,7 +2,7 @@
 #define _EZLOG_H_
 
 #ifndef __cplusplus
-#    define bool _Bool
+#    define bool unsigned char
 #    define false 0
 #    define true 1
 #endif /* __cplusplus */
