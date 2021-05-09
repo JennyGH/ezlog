@@ -1,4 +1,4 @@
-PROJECT(ezlog VERSION 1.0.0 DESCRIPTION "ezlog static library")
+PROJECT(ezlog VERSION 1.0.1 DESCRIPTION "ezlog static library")
 
 IF(MSVC)
     SET(VERSIONINFO_RC ${PROJECT_BINARY_DIR}/VersionInfo.rc)

@@ -355,6 +355,11 @@ void ezlog_set_format(unsigned int level, unsigned int flag)
     g_level_format[level] = flag;
 }
 
+bool ezlog_is_level_writable(unsigned int level)
+{
+    return _is_valid_level(level) && _is_writable_level(level);
+}
+
 void ezlog_assert(
     bool         condition,
     const char*  expr,
@@ -379,7 +384,7 @@ void ezlog_write_log(
     const char*  format,
     ...)
 {
-    if (!_is_valid_level(level) || !_is_writable_level(level) || NULL == format)
+    if (!ezlog_is_level_writable(level) || NULL == format)
     {
         return;
     }

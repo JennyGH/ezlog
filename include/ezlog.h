@@ -127,6 +127,13 @@ extern "C"
      */
     void ezlog_set_format(unsigned int level, unsigned int flag);
 
+    /**
+     * 获取当前日志等级是否能够写入日志
+     * @param level 日志等级
+     * @return 能写入返回true，否则返回false
+     */
+    bool ezlog_is_level_writable(unsigned int level);
+
     void ezlog_assert(
         bool         condition,
         const char*  expr,
@@ -158,7 +165,18 @@ extern "C"
     ezlog_write_hex(#bytes, bytes, size) // 输出十六进制
 
 #define __LOG(level, ...)                                                      \
-    ezlog_write_log(level, __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
+    do                                                                         \
+    {                                                                          \
+        if (ezlog_is_level_writable(level))                                    \
+        {                                                                      \
+            ezlog_write_log(                                                   \
+                level,                                                         \
+                __FUNCTION__,                                                  \
+                __FILE__,                                                      \
+                __LINE__,                                                      \
+                __VA_ARGS__)                                                   \
+        }                                                                      \
+    } while (0)
 
 // 输出 FATAL 级日志
 #define LOG_FATAL(...) __LOG(EZLOG_LEVEL_FATAL, __VA_ARGS__)
