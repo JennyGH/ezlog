@@ -178,7 +178,7 @@ extern "C"
                 __FUNCTION__,                                                  \
                 EZLOG_FILE_MACRO,                                              \
                 __LINE__,                                                      \
-                __VA_ARGS__)                                                   \
+                __VA_ARGS__);                                                  \
         }                                                                      \
     } while (0)
 
