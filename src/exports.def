@@ -10,6 +10,7 @@ EXPORTS
     ezlog_set_assert_hook
     ezlog_set_get_output_path_hook
     ezlog_set_format
+    ezlog_is_level_writable
     ezlog_assert
     ezlog_write_log
     ezlog_write_hex

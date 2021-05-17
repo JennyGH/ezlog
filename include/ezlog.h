@@ -35,6 +35,10 @@ extern "C"
 
 #define EZLOG_INFINITE 0xffffffff
 
+#ifndef EZLOG_FILE_MACRO
+#    define EZLOG_FILE_MACRO __FILE__
+#endif // !EZLOG_FILE_MACRO
+
     /**
      * 触发 EZLOG_ASSERT 时的钩子函数
      * @param expr 触发 EZLOG_ASSERT 的表达式
@@ -159,7 +163,7 @@ extern "C"
     void ezlog_deinit();
 
 #define EZLOG_ASSERT(expr)                                                     \
-    ezlog_assert((expr), #expr, __FILE__, __LINE__) // 记录断言
+    ezlog_assert((expr), #expr, EZLOG_FILE_MACRO, __LINE__) // 记录断言
 
 #define LOG_HEX(bytes, size)                                                   \
     ezlog_write_hex(#bytes, bytes, size) // 输出十六进制
@@ -172,7 +176,7 @@ extern "C"
             ezlog_write_log(                                                   \
                 level,                                                         \
                 __FUNCTION__,                                                  \
-                __FILE__,                                                      \
+                EZLOG_FILE_MACRO,                                              \
                 __LINE__,                                                      \
                 __VA_ARGS__)                                                   \
         }                                                                      \

@@ -28,6 +28,7 @@ function build() {
           -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
           -DCMAKE_C_COMPILER=/usr/bin/gcc       \
           -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
+          -DBUILD_SHARED=FALSE                  \
           ..
     cmake --build . --config $BUILD_TYPE
     make install
