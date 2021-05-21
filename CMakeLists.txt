@@ -76,9 +76,10 @@ IF(MSVC)
     SET(CMAKE_C_FLAGS                  "${CMAKE_C_FLAGS}   /MP /utf-8")
     SET(CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS} /MP /utf-8")
 ELSE()
-    SET(CMAKE_C_FLAGS                  "${CMAKE_C_FLAGS}   -s -fPIC")
-    SET(CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS} -s -fPIC")
+    SET(CMAKE_C_FLAGS                  "${CMAKE_C_FLAGS}   -fPIC")
+    SET(CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS} -fPIC")
     SET(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -ggdb")
+    SET(CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE} -s")
 ENDIF() # ENDIF MSVC
 
 # Add C/C++ Macros
