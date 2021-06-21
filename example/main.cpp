@@ -58,10 +58,12 @@ int main(int argc, char* argv[])
     ezlog_set_log_color_enabled(true);
 
     // （可选）同步输出太慢了，用异步可能会快一点
-    // ezlog_set_async_mode_enabled(true);
+    ezlog_set_async_mode_enabled(true);
+
+    ezlog_set_async_update_interval(1);
 
     // （可选）告诉我要多大的缓冲区去存放异步日志内容吧
-    // ezlog_set_async_buffer_size(1024 * 1024);
+    ezlog_set_async_buffer_size(1024 * 1024);
 
     // （可选）我想某些等级的日志不要输出太多没用信息
     ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 输出全部信息
@@ -87,12 +89,12 @@ int main(int argc, char* argv[])
     ezlog_set_get_output_path_hook(_get_output_path_hook);
 
     // 输出些东西
-    LOG_FATAL("Test verbose log.");
-    LOG_ERROR("Test error log.");
-    LOG_WARN("Test warn log.");
-    LOG_INFO("Test info log.");
-    LOG_DEBUG("Test debug log.");
-    LOG_VERBOSE("Test verbose log.");
+    LOG_FATAL("Test %s log.", "fatal");
+    LOG_ERROR("Test %s log.", "error");
+    LOG_WARN("Test %s log.", "warn");
+    LOG_INFO("Test %s log.", "info");
+    LOG_DEBUG("Test %s log.", "debug");
+    LOG_VERBOSE("Test %s log.", "verbose");
 
     // 简单地输出十六进制
     LOG_HEX(bytes, sizeof(bytes));
