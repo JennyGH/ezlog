@@ -35,5 +35,5 @@ function build() {
     cd "$PROJECT_ROOT"
 }
 
-build Debug
 build Release
+build Debug

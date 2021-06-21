@@ -21,31 +21,20 @@
 #    define __threadcall __stdcall
 typedef DWORD  thread_return_t;
 typedef HANDLE thread_arg_t;
+typedef HANDLE thread_id_t;
 #else
 #    include <sched.h>
 #    include <pthread.h>
 #    define __threadcall
-typedef void* thread_return_t;
-typedef void* thread_arg_t;
+typedef void*     thread_return_t;
+typedef void*     thread_arg_t;
+typedef pthread_t thread_id_t;
 #endif // _MSC_VER
 
 #define async_buffer_count 2
 
 #define _scoped_lock    ezlog_scoped_lock _lock_(g_lock)
 #define _current_buffer ((g_async_buffers[g_async_buffer_index]))
-#define _try_flush_buffer(buffer)                                              \
-    do                                                                         \
-    {                                                                          \
-        _scoped_lock;                                                          \
-        if (!(buffer)->is_empty())                                             \
-        {                                                                      \
-            if (g_stream.is_opened())                                          \
-            {                                                                  \
-                (buffer)->flush(g_stream);                                     \
-            }                                                                  \
-            (buffer)->clear();                                                 \
-        }                                                                      \
-    } while (0)
 
 typedef int (*sprintf_hook_t)(const char*, ...);
 typedef int (*vsprintf_hook_t)(const char*, va_list);
@@ -76,6 +65,7 @@ static unsigned int g_level_format[] = {
     EZLOG_FORMAT_ALL,
     EZLOG_FORMAT_ALL,
 };
+static thread_id_t                  g_thread_handle = 0;
 static ezlog_stream                 g_stream;
 static volatile ezlog_lock          g_lock                 = NULL;
 static ezlog_event                  g_event                = NULL;
@@ -200,6 +190,10 @@ _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg);
 
 static void _try_release_async_buffers();
 
+static void _try_flush_buffer(ezlog_buffer* buffer);
+
+static void _wait_for_thread_exit();
+
 static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
 {
     g_is_async_thread_running = true;
@@ -238,7 +232,6 @@ static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
 
     g_is_async_thread_running = false;
 
-    ezlog_event_notify(g_event, NULL);
     return ((thread_return_t)0);
 }
 
@@ -249,7 +242,7 @@ static void _disable_async_mode()
         // Notify the async log thread.
         ezlog_event_notify(g_event, NULL);
         // Wait for async log thread exit.
-        ezlog_event_wait(g_event, NULL, EZLOG_INFINITE);
+        _wait_for_thread_exit();
         ezlog_event_destroy(g_event);
 
         _try_init_output_stream();
@@ -678,14 +671,8 @@ void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
         return;
     }
 #if _MSC_VER
-    HANDLE hThread = ::CreateThread(NULL, 0, func, arg, 0, NULL);
-    if (NULL != hThread)
-    {
-        ::CloseHandle(hThread);
-        hThread = NULL;
-    }
+    g_thread_handle = ::CreateThread(NULL, 0, func, arg, 0, NULL);
 #else
-    static pthread_t   thread_id;
     pthread_attr_t     thread_attr;
     struct sched_param thread_sched_param;
 
@@ -696,7 +683,7 @@ void _try_start_async_log_thread(async_thread_func_t func, thread_arg_t arg)
     ::pthread_attr_setstacksize(&thread_attr, 8192);
     ::pthread_attr_setschedpolicy(&thread_attr, SCHED_RR);
     ::pthread_attr_setschedparam(&thread_attr, &thread_sched_param);
-    ::pthread_create(&thread_id, &thread_attr, func, arg);
+    ::pthread_create(&g_thread_handle, &thread_attr, func, arg);
     ::pthread_attr_destroy(&thread_attr);
 #endif // _MSC_VER
 }
@@ -714,6 +701,38 @@ void _try_release_async_buffers()
             ptr = NULL;
         }
     }
+}
+
+void _try_flush_buffer(ezlog_buffer* buffer)
+{
+    if (NULL == buffer)
+    {
+        return;
+    }
+    _scoped_lock;
+    if (!buffer->is_empty())
+    {
+        if (g_stream.is_opened())
+        {
+            buffer->flush(g_stream);
+        }
+        buffer->clear();
+    }
+}
+
+void _wait_for_thread_exit()
+{
+    if (!g_is_async_thread_running)
+    {
+        return;
+    }
+
+    thread_return_t thread_return_value;
+#if _MSC_VER
+    ::WaitForSingleObject(g_thread_handle, INFINITE);
+#else
+    ::pthread_join(g_thread_handle, &thread_return_value);
+#endif // _MSC_VER
 }
 
 int _stderr_vsprintf(const char* format, va_list args)
@@ -809,7 +828,9 @@ unsigned long _get_need_buffer_size(
     }
 
     // Write format string.
-    need_size += vsnprintf(NULL, 0, format, args);
+    va_list tmp_args;
+    va_copy(tmp_args, args);
+    need_size += vsnprintf(NULL, 0, format, tmp_args);
 
     // Try to write file info and line info.
     {
