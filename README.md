@@ -2,7 +2,7 @@
 
 ## 1. 简介
 
-ezlog（easy log）是一款使用 C/C++编写的简单易用的高性能日志库，支持同步/异步写入，日志滚动等功能。
+一个随便写的C/C++日志库，支持同步/异步输出日志，支持滚动日志
 
 ## 2. 目录结构
 
@@ -11,6 +11,7 @@ ezlog（easy log）是一款使用 C/C++编写的简单易用的高性能日志�
 ├── include                     // 导出的头文件
 ├── src                         // 内部实现
 ├── test                        // 测试例程
+├── example                     // 使用示例
 ├── build-linux.sh              // 编译脚本，针对Linux平台
 ├── build-win32.bat             // 编译脚本，针对Win32平台
 ├── test_ezlog.sh               // 测试脚本，针对Linux平台
@@ -28,7 +29,7 @@ ezlog（easy log）是一款使用 C/C++编写的简单易用的高性能日志�
 > build-win32.bat
 ```
 
-最终会在 ezlog/built/win32/lib 中得到编译后的 ezlog.lib 文件，如果编译动态库，会在 ezlog/built/win32/bin 中得到 ezlog.dll 文件
+最终会在 `./built/win32` 中得到编译后的库文件与头文件，其中 `.dll` 文件存放在 `bin` 目录
 
 ### 3.2. Linux 平台
 
@@ -37,61 +38,110 @@ $ cd ezlog
 $ bash build-linux.sh
 ```
 
-最终会在 ezlog/built/linux/lib 中得到编译后的 libezlog.a 文件
+最终会在 `./built/linux` 中得到编译后的库文件与头文件
 
 ## 3. 开始使用
 
-以下是简单的使用例子：
+来看看怎么用：
 
 ```c
-const char* _get_output_path() {
+const char* _get_output_path_hook() {
     return "/var/log/ezlog_output.log";
 }
-bool _should_roll_log(unsigned long file_size) {
+bool _roll_hook(unsigned long file_size) {
     // 当前日志大于等于10MB时创建新的日志文件
-    return file_size >= 1024*1024*10;
-}
-void _assert_triggered(const char* expr, const char* file, unsigned int line) {
-    // 记录日志
-    LOG_FATAL("Oops! Assert failed at file: %s, line: %u", file, line);
-    // 然后原地自旋
-    while(true) {}
+    return file_size >= 1024 * 1024 * 10;
 }
 
-// Step1: 在程序全局入口初始化日志库
-ezlog_init();
+// 使用 ezlog_write_log_args 封装为自己的日志函数
+static void _my_log_function(
+    unsigned int level,
+    const char*  function,
+    const char*  file,
+    unsigned int line,
+    const char*  format,
+    ...)
+{
+    va_list args;
+    va_start(args, format);
+    ezlog_write_log_args(level, function, file, line, format, args);
+    va_end(args);
+}
 
-// Step2: 设置日志等级
-ezlog_set_level(EZLOG_LEVEL_VERBOSE);
+// 自定义断言回调
+static void _assert_hook(const char* expr, const char* file, unsigned int line)
+{
+    _my_log_function(
+        EZLOG_LEVEL_FATAL,
+        __FUNCTION__,
+        file,
+        line,
+        "Assert fail: `%s` is `false`!",
+        expr);
+    // while (true) {} // 原地自旋
+}
 
-// Step2.1（非必须）: 设置日志等级对应的输出格式，默认全部等级都为 EZLOG_FORMAT_ALL，即输出所有信息。
-// ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 对于 FATAL 等级的日志，输出所有信息
-// ezlog_set_format(EZLOG_LEVEL_WARN, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO); // 对于 WARN 等级日志，输出线程号与所在函数名
-// ezlog_set_log_roll_enabled(true);         // 是否开启日志滚动
-// ezlog_set_roll_hook(_should_roll_log);    // 设置日志滚动的钩子函数
-// ezlog_set_assert_hook(_assert_triggered); // 设置使用 EZLOG_ASSERT 宏时的钩子函数
-// ezlog_set_log_color_enabled(true); // 是否启用颜色输出（仅Linux下有效）
-// ezlog_set_async_mode_enabled(true); // 是否启用异步日志模式
-// ezlog_set_async_buffer_size(1024*1024); // 设置异步日志缓冲区大小：1MB
+int main(int argc, char* argv[])
+{
+    static unsigned char bytes[] = {0x00, 0x01, 0x02, 0x03, 0x04};
 
-// Step3: 设置获取输出目录的钩子函数
-ezlog_set_get_output_path_hook(_get_output_path);
+    // 初始化日志库
+    ezlog_init();
 
-// Step4: 现在你可以开始记录日志了：
-LOG_FATAL("Hello World!");
-LOG_ERROR("Hello World!");
-LOG_WARN("Hello World!");
-LOG_INFO("Hello World!");
-LOG_DEBUG("Hello World!");
-LOG_VERBOSE("Hello World!");
-// 输出十六进制
-unsigned char bytes[] = { 0x01, 0x02, 0x03 };
-LOG_HEX(bytes, sizeof(bytes)); // 将会输出 `Hex of bytes: 010203`
-// 表达式为false，将会触发通过 ezlog_set_assert_hook 设置的断言钩子函数
-EZLOG_ASSERT(sizeof(bytes) > 3);
+    // 设置日志等级
+    ezlog_set_level(EZLOG_LEVEL_VERBOSE);
 
-// Step5: 释放资源，如果是异步模式，将会输出异步缓冲区中剩余的日志
-ezlog_deinit();
+    // （可选）我想让日志变得好看一点
+    ezlog_set_log_color_enabled(true);
+
+    // （可选）同步输出太慢了，用异步可能会快一点
+    // ezlog_set_async_mode_enabled(true);
+
+    // （可选）告诉我要多大的缓冲区去存放异步日志内容吧
+    // ezlog_set_async_buffer_size(1024 * 1024);
+
+    // （可选）我想某些等级的日志不要输出太多没用信息
+    ezlog_set_format(EZLOG_LEVEL_FATAL,   EZLOG_FORMAT_ALL); // 输出全部信息
+    ezlog_set_format(EZLOG_LEVEL_ERROR,   EZLOG_FORMAT_ALL);
+    ezlog_set_format(EZLOG_LEVEL_WARN,    EZLOG_FORMAT_FUNC_INFO); // 只输出所在函数信息
+    ezlog_set_format(EZLOG_LEVEL_INFO,    EZLOG_FORMAT_FUNC_INFO);
+    ezlog_set_format(EZLOG_LEVEL_DEBUG,   EZLOG_FORMAT_ALL & (~EZLOG_FORMAT_FUNC_INFO)); // 不输出所在函数信息
+    ezlog_set_format(EZLOG_LEVEL_VERBOSE, EZLOG_FORMAT_NONE); // 只输出日志时间与日志内容
+
+    // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
+    ezlog_set_assert_hook(_assert_hook);
+    // （可选）启用日志滚动
+    ezlog_set_log_roll_enabled(true);
+    // （可选）告诉我该以什么方式来判断是否应该滚动日志了
+    ezlog_set_roll_hook(_roll_hook);
+    // 告诉我日志该输出到哪里
+    ezlog_set_get_output_path_hook(_get_output_path_hook);
+
+    // 输出些东西
+    LOG_FATAL("Test verbose log.");
+    LOG_ERROR("Test error log.");
+    LOG_WARN("Test warn log.");
+    LOG_INFO("Test info log.");
+    LOG_DEBUG("Test debug log.");
+    LOG_VERBOSE("Test verbose log.");
+
+    // 简单地输出十六进制
+    LOG_HEX(bytes, sizeof(bytes));
+
+    // 以VERBOSE等级带自定义前缀地输出十六进制
+    ezlog_write_hex(
+        EZLOG_LEVEL_VERBOSE,
+        "Output hex of `bytes` with custom prefix: ",
+        bytes,
+        sizeof(bytes));
+
+    // 断言
+    EZLOG_ASSERT(sizeof(bytes) >= 1024);
+
+    // 释放日志库资源
+    ezlog_deinit();
+    return 0;
+}
 ```
 
 ## 4. 常量说明

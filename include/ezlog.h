@@ -1,6 +1,8 @@
 #ifndef _EZLOG_H_
 #define _EZLOG_H_
 
+#include <stdarg.h>
+
 #ifndef __cplusplus
 #    define bool unsigned char
 #    define false 0
@@ -19,6 +21,7 @@ extern "C"
 #define EZLOG_LEVEL_DEBUG   4
 #define EZLOG_LEVEL_VERBOSE 5
 
+#define EZLOG_FORMAT_NONE        (0)
 #define EZLOG_FORMAT_FUNC_INFO   (1 << 0)
 #define EZLOG_FORMAT_FILE_INFO   (1 << 1)
 #define EZLOG_FORMAT_LINE_INFO   (1 << 2)
@@ -152,8 +155,24 @@ extern "C"
         const char*  format,
         ...);
 
+    void ezlog_write_log_args(
+        unsigned int level,
+        const char*  func,
+        const char*  file,
+        unsigned int line,
+        const char*  format,
+        va_list      args);
+
+    /**
+     * 以十六进制输出字节数据
+     * @param level          日志等级
+     * @param prefix         输出前缀
+     * @param bytes          要输出的字节数据
+     * @param count_of_bytes 要输出的字节数
+     */
     void ezlog_write_hex(
-        const char*          name,
+        unsigned int         level,
+        const char*          prefix,
         const unsigned char* bytes,
         unsigned long        count_of_bytes);
 
@@ -166,7 +185,11 @@ extern "C"
     ezlog_assert((expr), #expr, EZLOG_FILE_MACRO, __LINE__) // 记录断言
 
 #define LOG_HEX(bytes, size)                                                   \
-    ezlog_write_hex(#bytes, bytes, size) // 输出十六进制
+    ezlog_write_hex(                                                           \
+        EZLOG_LEVEL_VERBOSE,                                                   \
+        #bytes ": ",                                                           \
+        bytes,                                                                 \
+        size) // 简单地输出十六进制
 
 #define __LOG(level, ...)                                                      \
     do                                                                         \

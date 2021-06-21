@@ -1,4 +1,4 @@
-PROJECT(ezlog VERSION 1.0.1 DESCRIPTION "ezlog static library")
+PROJECT(ezlog VERSION 1.1.0 DESCRIPTION "ezlog")
 
 IF(MSVC)
     SET(VERSIONINFO_RC ${PROJECT_BINARY_DIR}/VersionInfo.rc)
@@ -7,6 +7,7 @@ ENDIF() # ENDIF MSVC
 
 FILE(GLOB_RECURSE EXPORTS_FILES
     ${PROJECT_SOURCE_DIR}/*.def
+    ${PROJECT_SOURCE_DIR}/*.map
 )
 
 FILE(GLOB_RECURSE PUBLIC_INCLUDE_FILES
@@ -40,6 +41,14 @@ ADD_LIBRARY(
     ${EXPORTS_FILES}  # Add export file of C APIs.
     ${VERSIONINFO_RC} # Add version info.
 )
+
+IF(CMAKE_CXX_CPPCHECK)
+    ADD_CUSTOM_COMMAND(
+        TARGET ${PROJECT_NAME}
+        PRE_BUILD
+        COMMAND ${CPPCHECK_COMMAND} ${PROJECT_SOURCE_DIR}
+    )
+ENDIF() # ENDIF `cppcheck` was found.
 
 IF(UNIX)
     SET(LINK_LIBS pthread)

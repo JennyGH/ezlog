@@ -18,7 +18,7 @@ _default_assert_hook(const char* expr, const char* file, unsigned int line)
 {
     fprintf(
         stderr,
-        "Assertion failed: %s, at file: \"%s\", line: %d",
+        "Assertion failed: %s, at file: \"%s\", line: %u",
         expr,
         file,
         line);

@@ -14,6 +14,7 @@ global:
     ezlog_is_level_writable;
     ezlog_assert;
     ezlog_write_log;
+    ezlog_write_log_args;
     ezlog_write_hex;
     ezlog_deinit;
 local:

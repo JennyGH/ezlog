@@ -141,7 +141,7 @@ static const char* get_output_path_hook()
     }
     else
     {
-        static std::string  path  = g_test_config.output_dir + "/test.log";
+        static std::string path = g_test_config.output_dir + "/test.log";
         return path.c_str();
     }
 }

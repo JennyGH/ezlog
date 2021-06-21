@@ -77,7 +77,7 @@ static unsigned int g_level_format[] = {
     EZLOG_FORMAT_ALL,
 };
 static ezlog_stream                 g_stream;
-static ezlog_lock                   g_lock                 = NULL;
+static volatile ezlog_lock          g_lock                 = NULL;
 static ezlog_event                  g_event                = NULL;
 static ezlog_roll_hook_t            g_roll_hook            = NULL;
 static ezlog_assert_hook_t          g_assert_hook          = NULL;
@@ -242,6 +242,22 @@ static thread_return_t __threadcall _async_log_thread(thread_arg_t arg)
     return ((thread_return_t)0);
 }
 
+static void _disable_async_mode()
+{
+    if (g_is_async_mode_enabled)
+    {
+        // Notify the async log thread.
+        ezlog_event_notify(g_event, NULL);
+        // Wait for async log thread exit.
+        ezlog_event_wait(g_event, NULL, EZLOG_INFINITE);
+        ezlog_event_destroy(g_event);
+
+        _try_init_output_stream();
+        _try_flush_buffer(_current_buffer);
+        _try_release_async_buffers();
+    }
+}
+
 int ezlog_init()
 {
     if (g_is_inited)
@@ -249,7 +265,11 @@ int ezlog_init()
         return EZLOG_FAIL;
     }
 
-    g_lock = ezlog_lock_create();
+    if (NULL == g_lock)
+    {
+        g_lock = ezlog_lock_create();
+    }
+
     {
         _scoped_lock;
         g_roll_hook            = _default_flush_hook;
@@ -257,28 +277,46 @@ int ezlog_init()
         g_get_output_path_hook = _default_get_output_path_hook;
         set_assert_hook(_default_assert_hook);
     }
+
     g_is_inited = true;
+
     return EZLOG_SUCCESS;
 }
 
 void ezlog_set_async_mode_enabled(bool enable)
 {
+    if (!g_is_inited)
+    {
+        return;
+    }
+    if (enable)
     {
         _scoped_lock;
-        g_event = ezlog_event_create();
+        if (NULL == g_event)
+        {
+            g_event = ezlog_event_create();
+        }
+    }
+    if (!enable)
+    {
+        _disable_async_mode();
     }
     g_is_async_mode_enabled = enable;
 }
 
 void ezlog_set_async_buffer_size(unsigned int size)
 {
+    if (!g_is_inited || !g_is_async_mode_enabled)
+    {
+        return;
+    }
     if (size > 0)
     {
         g_async_buffer_size = size;
         _scoped_lock;
         ezlog_buffers_t::iterator begin = g_async_buffers.begin();
         ezlog_buffers_t::iterator end   = g_async_buffers.end();
-        for (; begin != end; begin++)
+        for (; begin != end; ++begin)
         {
             if (NULL == *begin)
             {
@@ -327,16 +365,25 @@ void ezlog_set_roll_hook(ezlog_roll_hook_t hook)
 
 void ezlog_set_assert_hook(ezlog_assert_hook_t hook)
 {
+    if (!g_is_inited)
+    {
+        return;
+    }
     if (NULL == hook)
     {
         return;
     }
     _scoped_lock;
-    set_assert_hook(g_assert_hook = hook);
+    g_assert_hook = hook;
+    set_assert_hook(hook);
 }
 
 void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook)
 {
+    if (!g_is_inited)
+    {
+        return;
+    }
     if (NULL == hook)
     {
         return;
@@ -347,6 +394,10 @@ void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook)
 
 void ezlog_set_format(unsigned int level, unsigned int flag)
 {
+    if (!g_is_inited)
+    {
+        return;
+    }
     if (!_is_valid_level(level))
     {
         return;
@@ -384,6 +435,20 @@ void ezlog_write_log(
     const char*  format,
     ...)
 {
+    va_list args;
+    va_start(args, format);
+    ezlog_write_log_args(level, func, file, line, format, args);
+    va_end(args);
+}
+
+void ezlog_write_log_args(
+    unsigned int level,
+    const char*  func,
+    const char*  file,
+    unsigned int line,
+    const char*  format,
+    va_list      args)
+{
     if (!ezlog_is_level_writable(level) || NULL == format)
     {
         return;
@@ -394,8 +459,6 @@ void ezlog_write_log(
         return;
     }
 
-    va_list args;
-    va_start(args, format);
     if (g_is_async_mode_enabled)
     {
         // Start work thread.
@@ -406,15 +469,15 @@ void ezlog_write_log(
     {
         _sync_write_log(level, func, file, line, format, args);
     }
-    va_end(args);
 }
 
 void ezlog_write_hex(
-    const char*          name,
+    unsigned int         level,
+    const char*          prefix,
     const unsigned char* bytes,
     unsigned long        count_of_bytes)
 {
-    if (NULL == name || NULL == bytes || count_of_bytes == 0)
+    if (NULL == bytes || count_of_bytes == 0 || !ezlog_is_level_writable(level))
     {
         return;
     }
@@ -428,11 +491,11 @@ void ezlog_write_hex(
     {
         // Start work thread.
         _try_start_async_log_thread(_async_log_thread, NULL);
-        _async_write_hex(name, bytes, count_of_bytes);
+        _async_write_hex(prefix, bytes, count_of_bytes);
     }
     else
     {
-        _sync_write_hex(name, bytes, count_of_bytes);
+        _sync_write_hex(prefix, bytes, count_of_bytes);
     }
 }
 
@@ -442,26 +505,21 @@ void ezlog_deinit()
     {
         return;
     }
+    g_is_inited = false;
 
-    if (g_is_async_mode_enabled)
-    {
-        // Notify the async log thread.
-        ezlog_event_notify(g_event, NULL);
-        // Wait for async log thread exit.
-        ezlog_event_wait(g_event, NULL, EZLOG_INFINITE);
-        ezlog_event_destroy(g_event);
-
-        _try_init_output_stream();
-        _try_flush_buffer(_current_buffer);
-        _try_release_async_buffers();
-    }
+    _disable_async_mode();
 
     // Lock and close the output stream.
     {
         _scoped_lock;
         g_stream.close();
     }
-    g_is_inited = false;
+
+    if (NULL != g_lock)
+    {
+        ezlog_lock_destroy(g_lock);
+        g_lock = NULL;
+    }
 }
 
 bool _default_flush_hook(unsigned long file_size)
@@ -515,12 +573,13 @@ const char* _get_level_color(unsigned int level)
 {
 #if _MSC_VER
     return NULL;
-#endif // _MSC_VER
+#else
     if (!_is_valid_level(level) || !_is_writable_level(level))
     {
         return NULL;
     }
     return g_log_level_colors[level];
+#endif // _MSC_VER
 }
 
 void _roll_output_stream()
@@ -778,7 +837,7 @@ unsigned long _get_need_buffer_size(
         if (line > 0 && _check_level_format(level, EZLOG_FORMAT_LINE_INFO))
         {
             char temp[16] = {0};
-            sprintf_s(temp, "%d", line);
+            sprintf_s(temp, "%u", line);
             need_size += (9 + ::strlen(temp));
         }
 
@@ -805,12 +864,12 @@ unsigned long _get_need_buffer_size(
 }
 
 unsigned long _get_need_buffer_size(
-    const char*          name,
+    const char*          prefix,
     const unsigned char* bytes,
     const unsigned long& count_of_bytes)
 {
     unsigned long need_size = 0;
-    need_size += (9 + ::strlen(name));
+    need_size += (NULL == prefix ? 0 : ::strlen(prefix));
     need_size += count_of_bytes * 2;
     need_size += 1;
     return need_size;
@@ -819,15 +878,18 @@ unsigned long _get_need_buffer_size(
 void _sprintf_hex(
     sprintf_hook_t       sprintf_hook,
     vsprintf_hook_t      vsprintf_hook,
-    const char*          name,
+    const char*          prefix,
     const unsigned char* bytes,
     const unsigned long& count_of_bytes)
 {
-    if (NULL == name || NULL == bytes || count_of_bytes == 0)
+    if (NULL == bytes || count_of_bytes == 0)
     {
         return;
     }
-    sprintf_hook("Hex of %s: ", name);
+    if (NULL != prefix)
+    {
+        sprintf_hook("%s", prefix);
+    }
     for (unsigned long i = 0; i < count_of_bytes; i++)
     {
         sprintf_hook("%02X", bytes[i]);
@@ -854,18 +916,23 @@ void _sync_write_hex(
 }
 
 void _async_write_hex(
-    const char*          name,
+    const char*          prefix,
     const unsigned char* bytes,
     const unsigned long& count_of_bytes)
 {
     unsigned long need_size =
-        _get_need_buffer_size(name, bytes, count_of_bytes);
+        _get_need_buffer_size(prefix, bytes, count_of_bytes);
 
     // Check if the current buffer is large enough.
     _try_switch_current_async_buffer(need_size);
 
     _scoped_lock;
-    _sprintf_hex(_async_sprintf, _async_vsprintf, name, bytes, count_of_bytes);
+    _sprintf_hex(
+        _async_sprintf,
+        _async_vsprintf,
+        prefix,
+        bytes,
+        count_of_bytes);
 }
 
 void _vsprintf_log(
