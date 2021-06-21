@@ -831,6 +831,7 @@ unsigned long _get_need_buffer_size(
     va_list tmp_args;
     va_copy(tmp_args, args);
     need_size += vsnprintf(NULL, 0, format, tmp_args);
+    va_end(tmp_args);
 
     // Try to write file info and line info.
     {
