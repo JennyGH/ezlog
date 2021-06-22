@@ -171,10 +171,10 @@ extern "C"
      * @param count_of_bytes 要输出的字节数
      */
     void ezlog_write_hex(
-        unsigned int         level,
-        const char*          prefix,
-        const unsigned char* bytes,
-        unsigned long        count_of_bytes);
+        unsigned int  level,
+        const char*   prefix,
+        const void*   bytes,
+        unsigned long count_of_bytes);
 
     /**
      * 反初始化，释放日志库资源，如果使用异步模式，将会输出异步缓冲区中剩余的日志

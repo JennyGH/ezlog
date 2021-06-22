@@ -465,10 +465,10 @@ void ezlog_write_log_args(
 }
 
 void ezlog_write_hex(
-    unsigned int         level,
-    const char*          prefix,
-    const unsigned char* bytes,
-    unsigned long        count_of_bytes)
+    unsigned int  level,
+    const char*   prefix,
+    const void*   bytes,
+    unsigned long count_of_bytes)
 {
     if (NULL == bytes || count_of_bytes == 0 || !ezlog_is_level_writable(level))
     {
@@ -484,11 +484,11 @@ void ezlog_write_hex(
     {
         // Start work thread.
         _try_start_async_log_thread(_async_log_thread, NULL);
-        _async_write_hex(prefix, bytes, count_of_bytes);
+        _async_write_hex(prefix, (const unsigned char*)bytes, count_of_bytes);
     }
     else
     {
-        _sync_write_hex(prefix, bytes, count_of_bytes);
+        _sync_write_hex(prefix, (const unsigned char*)bytes, count_of_bytes);
     }
 }
 
