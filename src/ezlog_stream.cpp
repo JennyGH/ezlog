@@ -57,10 +57,12 @@ void ezlog_stream::load(const char* path, const char* mode)
 
 void ezlog_stream::close()
 {
-    if (this->is_opened())
+    if (this->is_opened() && this->m_path != EZLOG_STDOUT &&
+        this->m_path != EZLOG_STDERR)
     {
         _try_fclose(m_file_ptr);
     }
+    m_file_ptr = NULL;
 }
 
 bool ezlog_stream::is_file() const
