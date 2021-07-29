@@ -18,7 +18,7 @@ typedef pthread_mutex_t ezlog_lock_t;
 
 #define _to_ezlog_lock_t(lock)  (static_cast<ezlog_lock_t*>(lock))
 #define _output_error(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
-#define _strerror_s(eno)        system::get_error_message(eno).c_str()
+#define _strerror_s(eno)        ezlog_get_error_message(eno).c_str()
 
 ezlog_lock ezlog_lock_create()
 {

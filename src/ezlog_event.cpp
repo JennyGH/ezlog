@@ -20,7 +20,7 @@ typedef struct pthread_event_t
 #endif // _MSC_VER
 
 #define _output_error(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
-#define _strerror_s(eno)        system::get_error_message(eno).c_str()
+#define _strerror_s(eno)        ezlog_get_error_message(eno).c_str()
 
 typedef struct ezlog_event_t
 {
@@ -158,7 +158,7 @@ ezlog_event ezlog_event_create()
     {
         _output_error(
             "Unable to create ezlog_event, because: %s.",
-            _strerror_s(system::get_last_error()));
+            _strerror_s(ezlog_get_last_error()));
         goto fail;
     }
 #else

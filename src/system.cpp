@@ -7,7 +7,7 @@
 #    include <string.h>
 #endif // _MSC_VER
 
-int system::get_last_error()
+int ezlog_get_last_error()
 {
 #if _MSC_VER
     return ::GetLastError();
@@ -16,7 +16,7 @@ int system::get_last_error()
 #endif // _MSC_VER
 }
 
-std::string system::get_error_message(int errcode)
+std::string ezlog_get_error_message(int errcode)
 {
     std::string res;
 #if _MSC_VER
@@ -56,7 +56,7 @@ std::string system::get_error_message(int errcode)
     return res;
 }
 
-std::string system::get_last_error_message()
+std::string ezlog_get_last_error_message()
 {
-    return system::get_error_message(system::get_last_error());
+    return ezlog_get_error_message(ezlog_get_last_error());
 }
