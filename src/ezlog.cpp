@@ -83,6 +83,8 @@ static std::atomic<size_t>          g_async_update_interval(EZLOG_INFINITE);
 static std::atomic<size_t>          g_log_level(EZLOG_LEVEL_VERBOSE);
 static ezlog_buffers_t              g_async_buffers(async_buffer_count, NULL);
 
+static std::string g_old_path;
+
 static void _vsprintf_log(
     sprintf_hook_t  sprintf_hook,
     vsprintf_hook_t vsprintf_hook,
@@ -578,16 +580,15 @@ const char* _get_level_color(unsigned int level)
 void _roll_output_stream()
 {
     static unsigned int roll_index = 0;
-    static std::string  old_path;
 
     const char* ptr = g_get_output_path_hook();
-    if (::stricmp(ptr, old_path.c_str()) != 0)
+    if (::stricmp(ptr, g_old_path.c_str()) != 0)
     {
         // If not the same file path, reset roll_index.
         roll_index = 0;
     }
     std::string new_path = ptr == NULL ? "" : ptr;
-    old_path             = new_path;
+    g_old_path             = new_path;
     if (!new_path.empty() && ::stricmp(ptr, EZLOG_STDOUT) != 0 &&
         ::stricmp(ptr, EZLOG_STDERR) != 0)
     {
