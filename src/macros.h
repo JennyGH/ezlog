@@ -1,6 +1,4 @@
-#ifndef _MACROS_H_
-#define _MACROS_H_
-
+#pragma once
 #ifndef NDEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
@@ -10,6 +8,18 @@
             sleep(1);                                                          \
         }
 #endif // !NDEBUG
+
+#define EZLOG_NAMESPACE_BEGIN                                                  \
+    namespace ez                                                               \
+    {                                                                          \
+        namespace prv                                                          \
+        {
+
+#define EZLOG_NAMESPACE_END                                                    \
+    }                                                                          \
+    }
+
+#define EZLOG_NAMESPACE ez::prv
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
@@ -50,4 +60,3 @@
     (EZLOG_FRONT_COLOR_GREEN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
 #define EZLOG_COLOR_VERBOSE                                                    \
     (EZLOG_FRONT_COLOR_WHITE EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#endif // !_MACROS_H_

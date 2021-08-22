@@ -16,6 +16,8 @@ AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
 AlignAfterOpenBracket: AlwaysBreak
 AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterDefinitionReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 99999
 IndentCaseLabels: true
 AlignTrailingComments: true
 SpaceAfterCStyleCast: false
@@ -31,7 +33,7 @@ BreakConstructorInitializersBeforeComma: true
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: false
-# ColumnLimit: 100
+ColumnLimit: 160
 ContinuationIndentWidth: 4
 SpaceBeforeAssignmentOperators: true
 SpacesBeforeTrailingComments: 1

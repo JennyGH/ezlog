@@ -20,21 +20,21 @@ std::string ezlog_get_error_message(int errcode)
 {
     std::string res;
 #if _MSC_VER
-    LPVOID lpMsgBuf = NULL;
+    LPVOID lpMsgBuf = nullptr;
     DWORD  dwLength = ::FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
+        nullptr,
         errcode,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (LPSTR)&lpMsgBuf,
         0,
-        NULL);
-    if (NULL != lpMsgBuf)
+        nullptr);
+    if (nullptr != lpMsgBuf)
     {
         res.assign((LPCSTR)lpMsgBuf, dwLength);
         ::LocalFree(lpMsgBuf);
-        lpMsgBuf           = NULL;
+        lpMsgBuf           = nullptr;
         std::size_t length = res.size();
         while (length && (res[length - 1] == '\n' || res[length - 1] == '\r'))
         {

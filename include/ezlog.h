@@ -26,9 +26,7 @@ extern "C"
 #define EZLOG_FORMAT_FILE_INFO   (1 << 1)
 #define EZLOG_FORMAT_LINE_INFO   (1 << 2)
 #define EZLOG_FORMAT_THREAD_INFO (1 << 3)
-#define EZLOG_FORMAT_ALL                                                       \
-    (EZLOG_FORMAT_FUNC_INFO | EZLOG_FORMAT_FILE_INFO |                         \
-     EZLOG_FORMAT_LINE_INFO | EZLOG_FORMAT_THREAD_INFO)
+#define EZLOG_FORMAT_ALL         (EZLOG_FORMAT_FUNC_INFO | EZLOG_FORMAT_FILE_INFO | EZLOG_FORMAT_LINE_INFO | EZLOG_FORMAT_THREAD_INFO)
 
 #define EZLOG_SUCCESS 1
 #define EZLOG_FAIL    0
@@ -48,10 +46,7 @@ extern "C"
      * @param file 触发 EZLOG_ASSERT 的文件路径
      * @param line 触发 EZLOG_ASSERT 的代码行号
      */
-    typedef void (*ezlog_assert_hook_t)(
-        const char*  expr,
-        const char*  file,
-        unsigned int line);
+    typedef void (*ezlog_assert_hook_t)(const char* expr, const char* file, unsigned int line);
 
     /**
      * 获取日志输出路径的钩子函数
@@ -141,27 +136,11 @@ extern "C"
      */
     bool ezlog_is_level_writable(unsigned int level);
 
-    void ezlog_assert(
-        bool         condition,
-        const char*  expr,
-        const char*  file,
-        unsigned int line);
+    void ezlog_assert(bool condition, const char* expr, const char* file, unsigned int line);
 
-    void ezlog_write_log(
-        unsigned int level,
-        const char*  func,
-        const char*  file,
-        unsigned int line,
-        const char*  format,
-        ...);
+    void ezlog_write_log(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, ...);
 
-    void ezlog_write_log_args(
-        unsigned int level,
-        const char*  func,
-        const char*  file,
-        unsigned int line,
-        const char*  format,
-        va_list      args);
+    void ezlog_write_log_args(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, va_list args);
 
     /**
      * 以十六进制输出字节数据
@@ -170,39 +149,31 @@ extern "C"
      * @param bytes          要输出的字节数据
      * @param count_of_bytes 要输出的字节数
      */
-    void ezlog_write_hex(
-        unsigned int  level,
-        const char*   prefix,
-        const void*   bytes,
-        unsigned long count_of_bytes);
+    void ezlog_write_hex(unsigned int level, const char* func, const char* file, unsigned int line, const void* bytes, unsigned long count_of_bytes);
 
     /**
      * 反初始化，释放日志库资源，如果使用异步模式，将会输出异步缓冲区中剩余的日志
      */
     void ezlog_deinit();
 
-#define EZLOG_ASSERT(expr)                                                     \
-    ezlog_assert((expr), #expr, EZLOG_FILE_MACRO, __LINE__) // 记录断言
+#define EZLOG_ASSERT(expr) ezlog_assert((expr), #expr, EZLOG_FILE_MACRO, __LINE__) // 记录断言
 
-#define LOG_HEX(bytes, size)                                                   \
-    ezlog_write_hex(                                                           \
-        EZLOG_LEVEL_VERBOSE,                                                   \
-        #bytes ": ",                                                           \
-        bytes,                                                                 \
-        size) // 简单地输出十六进制
+#define LOG_HEX(bytes, size)                                                                                                                                   \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        if (ezlog_is_level_writable(EZLOG_LEVEL_VERBOSE))                                                                                                      \
+        {                                                                                                                                                      \
+            ezlog_write_hex(EZLOG_LEVEL_VERBOSE, __FUNCTION__, EZLOG_FILE_MACRO, __LINE__, bytes, size);                                                       \
+        }                                                                                                                                                      \
+    } while (0)
 
-#define __LOG(level, ...)                                                      \
-    do                                                                         \
-    {                                                                          \
-        if (ezlog_is_level_writable(level))                                    \
-        {                                                                      \
-            ezlog_write_log(                                                   \
-                level,                                                         \
-                __FUNCTION__,                                                  \
-                EZLOG_FILE_MACRO,                                              \
-                __LINE__,                                                      \
-                __VA_ARGS__);                                                  \
-        }                                                                      \
+#define __LOG(level, ...)                                                                                                                                      \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        if (ezlog_is_level_writable(level))                                                                                                                    \
+        {                                                                                                                                                      \
+            ezlog_write_log(level, __FUNCTION__, EZLOG_FILE_MACRO, __LINE__, __VA_ARGS__);                                                                     \
+        }                                                                                                                                                      \
     } while (0)
 
 // 输出 FATAL 级日志

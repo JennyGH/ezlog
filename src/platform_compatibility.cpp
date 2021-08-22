@@ -28,7 +28,7 @@ assert_hook_t g_assert_hook = _default_assert_hook;
 
 void set_assert_hook(assert_hook_t hook)
 {
-    if (NULL != hook)
+    if (nullptr != hook)
     {
         g_assert_hook = hook;
     }
@@ -43,7 +43,7 @@ void __memcpy_s(
     const void* src,
     size_t      src_size)
 {
-    __ASSERT((dest != NULL) && (src != NULL));
+    __ASSERT((dest != nullptr) && (src != nullptr));
     __ASSERT(dest_size >= src_size);
     memcpy(dest, src, src_size);
 }
@@ -58,9 +58,9 @@ int __vsprintf_s(
     const char* format,
     va_list     args)
 {
-    __ASSERT(dest != NULL);
+    __ASSERT(dest != nullptr);
     __ASSERT(dest_size > 0);
-    __ASSERT(format != NULL);
+    __ASSERT(format != nullptr);
     int sprintfed_size = vsnprintf(dest, dest_size, format, args);
     __ASSERT(dest_size >= sprintfed_size);
     return sprintfed_size;
@@ -93,8 +93,8 @@ int __sscanf_s(
     const char* format,
     ...)
 {
-    __ASSERT(buffer != NULL);
-    __ASSERT(format != NULL);
+    __ASSERT(buffer != nullptr);
+    __ASSERT(format != nullptr);
     va_list args;
     va_start(args, format);
     int sscanfed_size = vsscanf(buffer, format, args);
@@ -111,7 +111,7 @@ int __strcpy_s(
     size_t      dest_size,
     const char* src)
 {
-    __ASSERT((dest != NULL) && (src != NULL));
+    __ASSERT((dest != nullptr) && (src != nullptr));
     __ASSERT(dest_size > 0);
     size_t src_size = ::strlen(src) + 1;
     __ASSERT(dest_size >= src_size);

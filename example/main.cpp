@@ -8,13 +8,7 @@
 #include <ezlog.h>
 
 // 使用 ezlog_write_log_args 封装为自己的日志函数
-static void _my_log_function(
-    unsigned int level,
-    const char*  function,
-    const char*  file,
-    unsigned int line,
-    const char*  format,
-    ...)
+static void _my_log_function(unsigned int level, const char* function, const char* file, unsigned int line, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -24,13 +18,7 @@ static void _my_log_function(
 
 static void _assert_hook(const char* expr, const char* file, unsigned int line)
 {
-    _my_log_function(
-        EZLOG_LEVEL_FATAL,
-        __FUNCTION__,
-        file,
-        line,
-        "Assert fail: `%s` is `false`!",
-        expr);
+    _my_log_function(EZLOG_LEVEL_FATAL, __FUNCTION__, file, line, "Assert fail: `%s` is `false`!", expr);
     // while (true) {}
 }
 
@@ -65,19 +53,16 @@ int main(int argc, char* argv[])
     // （可选）告诉我要多大的缓冲区去存放异步日志内容吧
     ezlog_set_async_buffer_size(1024 * 1024);
 
-    // （可选）我想某些等级的日志不要输出太多没用信息
-    ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 输出全部信息
-    ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
-    ezlog_set_format(
-        EZLOG_LEVEL_WARN,
-        EZLOG_FORMAT_FUNC_INFO); // 只输出所在函数信息
-    ezlog_set_format(EZLOG_LEVEL_INFO, EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(
-        EZLOG_LEVEL_DEBUG,
-        EZLOG_FORMAT_ALL & (~EZLOG_FORMAT_FUNC_INFO)); // 不输出所在函数信息
-    ezlog_set_format(
-        EZLOG_LEVEL_VERBOSE,
-        EZLOG_FORMAT_NONE); // 只输出日志时间与日志内容
+    //// （可选）我想某些等级的日志不要输出太多没用信息
+    //ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 输出全部信息
+    //ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
+    //ezlog_set_format(EZLOG_LEVEL_WARN,
+    //                 EZLOG_FORMAT_FUNC_INFO); // 只输出所在函数信息
+    //ezlog_set_format(EZLOG_LEVEL_INFO, EZLOG_FORMAT_FUNC_INFO);
+    //ezlog_set_format(EZLOG_LEVEL_DEBUG,
+    //                 EZLOG_FORMAT_ALL & (~EZLOG_FORMAT_FUNC_INFO)); // 不输出所在函数信息
+    //ezlog_set_format(EZLOG_LEVEL_VERBOSE,
+    //                 EZLOG_FORMAT_NONE); // 只输出日志时间与日志内容
 
     // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
     ezlog_set_assert_hook(_assert_hook);
@@ -98,13 +83,6 @@ int main(int argc, char* argv[])
 
     // 简单地输出十六进制
     LOG_HEX(bytes, sizeof(bytes));
-
-    // 带自定义前缀地输出十六进制
-    ezlog_write_hex(
-        EZLOG_LEVEL_VERBOSE,
-        "Output hex of `bytes` with custom prefix: ",
-        bytes,
-        sizeof(bytes));
 
     // 断言
     EZLOG_ASSERT(sizeof(bytes) >= 1024);
