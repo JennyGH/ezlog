@@ -35,6 +35,7 @@ CALL cmake -G "NMake Makefiles"                 ^
            -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ^
            -DCMAKE_VERBOSE_MAKEFILE=FALSE       ^
            -DBUILD_SHARED=FALSE                 ^
+           -DBUILD_BENCHMARK_TEST=TRUE          ^
            ..
             
 CALL cmake --build . --config %BUILD_TYPE% --target INSTALL

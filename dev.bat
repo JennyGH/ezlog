@@ -22,5 +22,7 @@ CD /D %BUILD_DIR%
 CALL cmake ..                                     ^
            -DCMAKE_BUILD_TYPE=DEBUG               ^
            -DCMAKE_CXX_CPPCHECK:FILEPATH=cppcheck ^
+           -DBUILD_TEST=TRUE                      ^
+           -DBUILD_BENCHMARK_TEST=TRUE            ^
 
 ENDLOCAL

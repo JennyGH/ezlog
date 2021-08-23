@@ -8,7 +8,6 @@ class destination
 
 public:
     destination(const std::string& dest);
-    destination(FILE* dest, bool should_close = false);
     ~destination();
 
     const std::string& get_path() const;

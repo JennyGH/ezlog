@@ -27,11 +27,13 @@ protected:
     virtual void do_commit(FILE* dest, const char* format, va_list args) = 0;
     virtual void do_flush(FILE* dest)                                    = 0;
 
+protected:
+    config_t _config;
+
 private:
     std::mutex                   _mutex;
     std::shared_ptr<destination> _dest;
+    std::atomic<size_t>          _roll_index;
 
-protected:
-    config_t _config;
 };
 EZLOG_NAMESPACE_END

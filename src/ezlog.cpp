@@ -60,7 +60,7 @@ void ezlog_set_async_update_interval(unsigned int seconds)
 {
     if (nullptr != g_logger_config)
     {
-        g_logger_config->set_async_log_buffer_size(seconds);
+        g_logger_config->set_async_log_flush_interval(seconds);
     }
 }
 

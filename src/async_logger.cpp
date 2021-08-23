@@ -77,6 +77,14 @@ void async_logger::do_commit(FILE* dest, const char* format, va_list args)
 
 void async_logger::do_flush(FILE* dest)
 {
+    {
+        _LOCK(this->_idle_mutex);
+        for (const auto& buffer : this->_idle_buffers)
+        {
+            buffer->flush(dest);
+            buffer->clear();
+        }
+    }
     _LOCK(this->_busy_mutex);
     for (const auto& buffer : this->_busy_buffers)
     {

@@ -75,9 +75,11 @@ static inline std::string _get_time_info()
 EZLOG_NAMESPACE_BEGIN
 
 basic_logger::basic_logger(config_t config)
-    : _dest(std::make_shared<destination>(stdout, false))
-    , _config(nullptr == config ? std::make_shared<logger_config>() : config)
+    : _config(nullptr == config ? std::make_shared<logger_config>() : config)
+    , _dest(nullptr)
+    , _roll_index(0)
 {
+    _dest = std::make_shared<destination>(_config->get_log_path());
 }
 
 basic_logger::basic_logger(const basic_logger& that)
@@ -209,17 +211,16 @@ void basic_logger::flush()
     }
 
     const auto path = this->_config->get_log_path();
+    if (_dest->get_path() != path)
+    {
+        _dest = std::make_shared<destination>(path);
+    }
     if (this->_config->is_enabled_roll() && this->_config->should_roll_log(this->_dest->get_size()))
     {
         std::string basename;
         std::string suffix;
         _get_basename_and_suffix(path, basename, suffix);
-        basename + "(" + std::to_string(0) + ")" + suffix;
-
-        // if (_dest->get_path() != path)
-        //{
-        //    _dest = std::make_shared<destination>(path);
-        //}
+        const std::string roll_log_path = basename + "(" + std::to_string(this->_roll_index++) + ")" + suffix;
     }
 
     {

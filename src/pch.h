@@ -9,6 +9,7 @@
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <thread>
 #include <condition_variable>
 
 #include "macros.h"

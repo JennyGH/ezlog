@@ -6,22 +6,27 @@ destination::destination(const std::string& dest)
     : _dest(nullptr)
     , _should_close(false)
 {
-    FILE* file = ::fopen(dest.c_str(), "a+");
-    if (nullptr != file)
+    if (dest == EZLOG_STDOUT)
     {
-        _dest         = file;
-        _should_close = true;
+        _dest         = stdout;
+        _should_close = false;
+        _path         = dest;
     }
-}
-
-destination::destination(FILE* dest, bool should_close)
-    : _dest(nullptr)
-    , _should_close(false)
-{
-    if (nullptr != dest)
+    else if (dest == EZLOG_STDERR)
     {
-        _dest         = dest;
-        _should_close = should_close;
+        _dest         = stderr;
+        _should_close = false;
+        _path         = dest;
+    }
+    else
+    {
+        FILE* file = ::fopen(dest.c_str(), "a+");
+        if (nullptr != file)
+        {
+            _dest         = file;
+            _should_close = true;
+            _path         = dest;
+        }
     }
 }
 
