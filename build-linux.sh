@@ -29,6 +29,7 @@ function build() {
           -DCMAKE_C_COMPILER=/usr/bin/gcc       \
           -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
           -DBUILD_SHARED=FALSE                  \
+          -DBUILD_TEST=TRUE                     \
           -DBUILD_BENCHMARK_TEST=TRUE           \
           ..
     cmake --build . --config $BUILD_TYPE
@@ -37,4 +38,4 @@ function build() {
 }
 
 build Release
-build Debug
+# build Debug

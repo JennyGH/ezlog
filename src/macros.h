@@ -2,24 +2,29 @@
 #ifndef NDEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
-#    define _EZLOG_ASSERT(expr)                                                \
-        while (!(expr))                                                        \
-        {                                                                      \
-            sleep(1);                                                          \
+#    define _EZLOG_ASSERT(expr)                                                                                                                                \
+        while (!(expr))                                                                                                                                        \
+        {                                                                                                                                                      \
+            sleep(1);                                                                                                                                          \
         }
 #endif // !NDEBUG
 
-#define EZLOG_NAMESPACE_BEGIN                                                  \
-    namespace ez                                                               \
-    {                                                                          \
-        namespace prv                                                          \
+#define EZLOG_NAMESPACE_BEGIN                                                                                                                                  \
+    namespace ez                                                                                                                                               \
+    {                                                                                                                                                          \
+        namespace prv                                                                                                                                          \
         {
 
-#define EZLOG_NAMESPACE_END                                                    \
-    }                                                                          \
+#define EZLOG_NAMESPACE_END                                                                                                                                    \
+    }                                                                                                                                                          \
     }
 
 #define EZLOG_NAMESPACE ez::prv
+
+#define _MERGE_BODY(a, b)     a##b
+#define _MERGE(a, b)          _MERGE_BODY(a, b)
+#define EZLOG_UNIQUE(name)    _MERGE(name, __COUNTER__)
+#define EZLOG_SCOPE_LOCK(mtx) std::unique_lock<std::mutex> EZLOG_UNIQUE(_scope_lock_)(mtx)
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
@@ -48,15 +53,9 @@
 #define EZLOG_FONT_STYLE_BLINK     "5m"
 #define EZLOG_FONT_STYLE_NORMAL    "22m"
 // log style
-#define EZLOG_COLOR_FATAL                                                      \
-    (EZLOG_FRONT_COLOR_MAGENTA EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_ERROR                                                      \
-    (EZLOG_FRONT_COLOR_RED EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_WARN                                                       \
-    (EZLOG_FRONT_COLOR_YELLOW EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_INFO                                                       \
-    (EZLOG_FRONT_COLOR_CYAN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_DEBUG                                                      \
-    (EZLOG_FRONT_COLOR_GREEN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
-#define EZLOG_COLOR_VERBOSE                                                    \
-    (EZLOG_FRONT_COLOR_WHITE EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_FATAL   (EZLOG_FRONT_COLOR_MAGENTA EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_ERROR   (EZLOG_FRONT_COLOR_RED EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_WARN    (EZLOG_FRONT_COLOR_YELLOW EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_INFO    (EZLOG_FRONT_COLOR_CYAN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_DEBUG   (EZLOG_FRONT_COLOR_GREEN EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
+#define EZLOG_COLOR_VERBOSE (EZLOG_FRONT_COLOR_WHITE EZLOG_BACK_COLOR_NULL EZLOG_FONT_STYLE_NORMAL)
