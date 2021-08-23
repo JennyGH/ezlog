@@ -19,7 +19,8 @@ IF NOT EXIST %BUILD_DIR% (
 CD /D %BUILD_DIR%
 
 @REM 开始构建工程
-CALL cmake ..                       ^
-           -DCMAKE_BUILD_TYPE=DEBUG ^
+CALL cmake ..                                     ^
+           -DCMAKE_BUILD_TYPE=DEBUG               ^
+           -DCMAKE_CXX_CPPCHECK:FILEPATH=cppcheck ^
 
 ENDLOCAL
