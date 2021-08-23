@@ -15,6 +15,7 @@ function do_compile(){
           -DCMAKE_BUILD_TYPE=$BUILD_TYPE                                        \
           -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR                                   \
           -DPLATFORM=OS64                                                       \
+          -DENABLE_CXX11=TRUE                                                   \
           -DCMAKE_VERBOSE_MAKEFILE=TRUE                                         \
           ..
 
