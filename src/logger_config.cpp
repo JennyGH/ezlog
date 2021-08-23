@@ -25,21 +25,6 @@ static inline const char* _default_get_output_path_callback()
     return EZLOG_STDOUT;
 }
 
-static void _get_basename_and_suffix(const char* path, std::string& basename, std::string& suffix)
-{
-    if (nullptr == path)
-    {
-        return;
-    }
-    std::string tmp(path);
-    std::size_t pos = tmp.find_last_of('.');
-    basename        = tmp.substr(0, pos);
-    if (std::string::npos != pos)
-    {
-        suffix = tmp.substr(pos);
-    }
-}
-
 EZLOG_NAMESPACE_BEGIN
 
 logger_config::logger_config()
@@ -151,13 +136,6 @@ std::string logger_config::get_log_path() const
 {
     ezlog_get_output_path_hook_t callback = this->_get_output_path_callback;
     const char*                  path     = callback();
-    if (this->_is_enabled_roll)
-    {
-        std::string basename;
-        std::string suffix;
-        _get_basename_and_suffix(path, basename, suffix);
-        return basename + "(" + std::to_string(0) + ")" + suffix;
-    }
     return nullptr == path ? "" : path;
 }
 

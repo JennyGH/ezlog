@@ -5,6 +5,21 @@
 
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
 
+static void _get_basename_and_suffix(const std::string& path, std::string& basename, std::string& suffix)
+{
+    if (path.empty())
+    {
+        return;
+    }
+    std::string tmp(path);
+    std::size_t pos = tmp.find_last_of('.');
+    basename        = tmp.substr(0, pos);
+    if (std::string::npos != pos)
+    {
+        suffix = tmp.substr(pos);
+    }
+}
+
 static const char* g_log_level_tags[] = {
     "[FATAL]  ",
     "[ERROR]  ",
@@ -71,9 +86,7 @@ basic_logger::basic_logger(const basic_logger& that)
 {
 }
 
-basic_logger::~basic_logger()
-{
-}
+basic_logger::~basic_logger() {}
 
 const std::string& basic_logger::get_destination() const
 {
@@ -178,10 +191,13 @@ void basic_logger::commit(unsigned int level, const char* file, const size_t& li
 
     log_tail.append(1, '\n');
 
-    _LOCK(this->_mutex);
-    _DO_COMMIT(log_head.c_str());
-    _DO_COMMIT(format, args);
-    _DO_COMMIT(log_tail.c_str());
+    {
+        _LOCK(this->_mutex);
+        _DO_COMMIT(log_head.c_str());
+        _DO_COMMIT(format, args);
+        _DO_COMMIT(log_tail.c_str());
+    }
+    this->flush();
 #undef _DO_COMMIT
 }
 
@@ -193,9 +209,17 @@ void basic_logger::flush()
     }
 
     const auto path = this->_config->get_log_path();
-    if (_dest->get_path() != path)
+    if (this->_config->is_enabled_roll() && this->_config->should_roll_log(this->_dest->get_size()))
     {
-        _dest = std::make_shared<destination>(path);
+        std::string basename;
+        std::string suffix;
+        _get_basename_and_suffix(path, basename, suffix);
+        basename + "(" + std::to_string(0) + ")" + suffix;
+
+        // if (_dest->get_path() != path)
+        //{
+        //    _dest = std::make_shared<destination>(path);
+        //}
     }
 
     {
