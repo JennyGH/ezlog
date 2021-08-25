@@ -18,14 +18,14 @@ public:
 
     const std::string& get_destination() const;
 
-    void commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...);
-    void commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args);
-    void flush();
+    size_t commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...);
+    size_t commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args);
+    void   flush();
 
 protected:
-    virtual void do_commit(FILE* dest, const char* str)                  = 0;
-    virtual void do_commit(FILE* dest, const char* format, va_list args) = 0;
-    virtual void do_flush(FILE* dest)                                    = 0;
+    virtual size_t do_commit(FILE* dest, const char* str)                  = 0;
+    virtual size_t do_commit(FILE* dest, const char* format, va_list args) = 0;
+    virtual void   do_flush(FILE* dest)                                    = 0;
 
 protected:
     config_t _config;
@@ -34,6 +34,5 @@ private:
     std::mutex                   _mutex;
     std::shared_ptr<destination> _dest;
     std::atomic<size_t>          _roll_index;
-
 };
 EZLOG_NAMESPACE_END

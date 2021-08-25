@@ -14,7 +14,7 @@ private:
     void flush_all_idle_buffers(FILE* dest);
 
     template <typename... arg_types>
-    void try_commit(FILE* dest, arg_types... args)
+    size_t try_commit(FILE* dest, arg_types... args)
     {
         while (true)
         {
@@ -25,8 +25,7 @@ private:
             buffer_ptr_t buffer = this->_idle_buffers.front();
             if (buffer->pushable(args...))
             {
-                buffer->push(args...);
-                break;
+                return buffer->push(args...);
             }
             else
             {
@@ -45,15 +44,16 @@ private:
                 }
             }
         }
+        return 0;
     }
 
 public:
     async_logger(config_t config = std::make_shared<config_t::element_type>());
     ~async_logger();
 
-    virtual void do_commit(FILE* dest, const char* str) override;
-    virtual void do_commit(FILE* dest, const char* format, va_list args) override;
-    virtual void do_flush(FILE* dest) override;
+    virtual size_t do_commit(FILE* dest, const char* str) override;
+    virtual size_t do_commit(FILE* dest, const char* format, va_list args) override;
+    virtual void   do_flush(FILE* dest) override;
 
 private:
     std::mutex               _idle_mutex;

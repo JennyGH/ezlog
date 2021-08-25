@@ -2,6 +2,7 @@
 #define _EZLOG_H_
 
 #include <stdarg.h>
+#include <stddef.h>
 
 #ifndef __cplusplus
 #    define bool unsigned char
@@ -138,9 +139,9 @@ extern "C"
 
     void ezlog_assert(bool condition, const char* expr, const char* file, unsigned int line);
 
-    void ezlog_write_log(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, ...);
+    size_t ezlog_write_log(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, ...);
 
-    void ezlog_write_log_args(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, va_list args);
+    size_t ezlog_write_log_args(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, va_list args);
 
     /**
      * 以十六进制输出字节数据
@@ -149,7 +150,7 @@ extern "C"
      * @param bytes          要输出的字节数据
      * @param count_of_bytes 要输出的字节数
      */
-    void ezlog_write_hex(unsigned int level, const char* func, const char* file, unsigned int line, const void* bytes, unsigned long count_of_bytes);
+    size_t ezlog_write_hex(unsigned int level, const char* func, const char* file, unsigned int line, const void* bytes, unsigned long count_of_bytes);
 
     /**
      * 反初始化，释放日志库资源，如果使用异步模式，将会输出异步缓冲区中剩余的日志

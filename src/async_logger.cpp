@@ -5,17 +5,16 @@ EZLOG_NAMESPACE_BEGIN
 
 async_logger::async_logger(config_t config)
     : basic_logger(config)
-    , _timer(
-          [this] {
-              this->flush();
-          },
-          this->_config->get_async_log_flush_interval())
 {
     for (size_t i = 0; i < 4; i++)
     {
         this->_idle_buffers.push(std::make_shared<safe_buffer>(this->_config->get_async_log_buffer_size()));
     }
-    this->_timer.start();
+    this->_timer.start(
+        [this] {
+            this->flush();
+        },
+        this->_config->get_async_log_flush_interval());
 }
 
 void async_logger::flush_all_busy_buffers(FILE* dest)
@@ -54,14 +53,14 @@ async_logger::~async_logger()
     this->flush();
 }
 
-void async_logger::do_commit(FILE* dest, const char* str)
+size_t async_logger::do_commit(FILE* dest, const char* str)
 {
-    this->try_commit(dest, str);
+    return this->try_commit(dest, str);
 }
 
-void async_logger::do_commit(FILE* dest, const char* format, va_list args)
+size_t async_logger::do_commit(FILE* dest, const char* format, va_list args)
 {
-    this->try_commit(dest, format, args);
+    return this->try_commit(dest, format, args);
 }
 
 void async_logger::do_flush(FILE* dest)

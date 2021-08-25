@@ -129,15 +129,16 @@ void ezlog_assert(bool condition, const char* expr, const char* file, unsigned i
     }
 }
 
-void ezlog_write_log(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, ...)
+size_t ezlog_write_log(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    ezlog_write_log_args(level, func, file, line, format, args);
+    size_t log_size = ezlog_write_log_args(level, func, file, line, format, args);
     va_end(args);
+    return log_size;
 }
 
-void ezlog_write_log_args(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, va_list args)
+size_t ezlog_write_log_args(unsigned int level, const char* func, const char* file, unsigned int line, const char* format, va_list args)
 {
     if (nullptr == g_logger)
     {
@@ -152,16 +153,16 @@ void ezlog_write_log_args(unsigned int level, const char* func, const char* file
     }
     if (nullptr == g_logger)
     {
-        return;
+        return 0;
     }
     if (!ezlog_is_level_writable(level))
     {
-        return;
+        return 0;
     }
-    g_logger->commit(level, file, line, func, format, args);
+    return g_logger->commit(level, file, line, func, format, args);
 }
 
-void ezlog_write_hex(unsigned int level, const char* func, const char* file, unsigned int line, const void* bytes, unsigned long count_of_bytes)
+size_t ezlog_write_hex(unsigned int level, const char* func, const char* file, unsigned int line, const void* bytes, unsigned long count_of_bytes)
 {
     if (nullptr == g_logger)
     {
@@ -176,11 +177,11 @@ void ezlog_write_hex(unsigned int level, const char* func, const char* file, uns
     }
     if (nullptr == g_logger)
     {
-        return;
+        return 0;
     }
     if (!ezlog_is_level_writable(level))
     {
-        return;
+        return 0;
     }
     std::string bytes_hex;
     for (unsigned long index = 0; index < count_of_bytes; index++)
@@ -189,7 +190,7 @@ void ezlog_write_hex(unsigned int level, const char* func, const char* file, uns
         sprintf_s(hex, "%02x", ((const unsigned char*)(bytes))[index]);
         bytes_hex.append(hex);
     }
-    g_logger->commit(level, file, line, func, bytes_hex.c_str());
+    return g_logger->commit(level, file, line, func, bytes_hex.c_str());
 }
 
 void ezlog_deinit()

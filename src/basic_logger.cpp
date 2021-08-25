@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "basic_logger.h"
 
-#define _LOCK(mtx) std::unique_lock<std::mutex> _scope_lock_of_(mtx)
-
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
 
 static void _get_basename_and_suffix(const std::string& path, std::string& basename, std::string& suffix)
@@ -100,25 +98,26 @@ void basic_logger::set_config(config_t config)
     _config = config;
 }
 
-void basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...)
+size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...)
 {
     if (nullptr == _dest || !this->_dest->is_writable())
     {
-        return;
+        return 0;
     }
     va_list args;
     va_start(args, format);
-    this->commit(level, file, line, function, format, args);
+    size_t commited_size = this->commit(level, file, line, function, format, args);
     va_end(args);
+    return commited_size;
 }
 
-void basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args)
+size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args)
 {
 #define _DO_COMMIT(...) do_commit(*this->_dest, __VA_ARGS__)
 
     if (nullptr == _dest || !this->_dest->is_writable())
     {
-        return;
+        return 0;
     }
 
     const auto  config           = this->_config;
@@ -193,13 +192,17 @@ void basic_logger::commit(unsigned int level, const char* file, const size_t& li
 
     log_tail.append(1, '\n');
 
+    size_t commited_size = 0;
     {
-        _LOCK(this->_mutex);
-        _DO_COMMIT(log_head.c_str());
-        _DO_COMMIT(format, args);
-        _DO_COMMIT(log_tail.c_str());
+        EZLOG_SCOPE_LOCK(this->_mutex);
+        commited_size += _DO_COMMIT(log_head.c_str());
+        commited_size += _DO_COMMIT(format, args);
+        commited_size += _DO_COMMIT(log_tail.c_str());
     }
+
     this->flush();
+
+    return commited_size;
 #undef _DO_COMMIT
 }
 
@@ -224,7 +227,7 @@ void basic_logger::flush()
     }
 
     {
-        _LOCK(this->_mutex);
+        EZLOG_SCOPE_LOCK(this->_mutex);
         this->do_flush(*_dest);
     }
 }

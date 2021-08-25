@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "safe_buffer.h"
 
-#define _LOCK(mtx) std::unique_lock<std::mutex> _scope_lock_of_(mtx)
-
 static inline void _try_release_memory(char*& mem)
 {
     if (nullptr != mem)
@@ -25,6 +23,14 @@ safe_buffer::safe_buffer(size_t size)
     }
 }
 
+safe_buffer::safe_buffer(const safe_buffer& that)
+    : _buffer(nullptr)
+    , _size(0)
+    , _remain(0)
+{
+    this->operator=(that);
+}
+
 safe_buffer::~safe_buffer()
 {
     _try_release_memory(_buffer);
@@ -32,7 +38,7 @@ safe_buffer::~safe_buffer()
 
 void safe_buffer::resize(size_t size)
 {
-    _LOCK(this->_mutex);
+    EZLOG_SCOPE_LOCK(this->_mutex);
     _buffer = (char*)::realloc(_buffer, size);
     if (nullptr == _buffer)
     {
@@ -65,21 +71,25 @@ bool safe_buffer::pushable(const char* format, va_list args) const
     return _remain > need_size;
 }
 
-int safe_buffer::push(const char* format, ...)
+size_t safe_buffer::push(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    int size = this->push(format, args);
+    size_t size = this->push(format, args);
     va_end(args);
     return size;
 }
 
-int safe_buffer::push(const char* format, va_list args)
+size_t safe_buffer::push(const char* format, va_list args)
 {
-    _LOCK(this->_mutex);
+    EZLOG_SCOPE_LOCK(this->_mutex);
     size_t used = _size - _remain;
     char*  dest = _buffer + used;
     int    size = ::vsnprintf(dest, _remain, format, args);
+    if (size < 0)
+    {
+        size = 0;
+    }
     if (size > _remain)
     {
         _remain = 0;
@@ -99,7 +109,7 @@ size_t safe_buffer::flush(FILE* dest_stream)
     }
     size_t size = 0;
     {
-        _LOCK(this->_mutex);
+        EZLOG_SCOPE_LOCK(this->_mutex);
         size_t used = _size - _remain;
         size        = ::fwrite(_buffer, sizeof(char), used, dest_stream);
     }
@@ -119,11 +129,27 @@ bool safe_buffer::empty() const
 
 void safe_buffer::clear()
 {
-    _LOCK(this->_mutex);
+    EZLOG_SCOPE_LOCK(this->_mutex);
     if (nullptr != _buffer)
     {
         ::memset(_buffer, 0, _size);
         _remain = _size.load();
     }
+}
+safe_buffer& safe_buffer::operator=(const safe_buffer& that)
+{
+    if (&that != this)
+    {
+        _try_release_memory(this->_buffer);
+        this->_size   = that._size.load();
+        this->_remain = that._remain.load();
+        if (this->_size > 0)
+        {
+            this->_buffer = (char*)::malloc(this->_size);
+        }
+        EZLOG_SCOPE_LOCK(that._mutex);
+        ::memcpy_s(this->_buffer, this->_size, that._buffer, that._size);
+    }
+    return *this;
 }
 EZLOG_NAMESPACE_END

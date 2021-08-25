@@ -7,8 +7,8 @@ public:
     using basic_logger::basic_logger;
     ~logger() = default;
 
-    virtual void do_commit(FILE* dest, const char* str) override;
-    virtual void do_commit(FILE* dest, const char* format, va_list args) override;
-    virtual void do_flush(FILE* dest) override;
+    virtual size_t do_commit(FILE* dest, const char* str) override;
+    virtual size_t do_commit(FILE* dest, const char* format, va_list args) override;
+    virtual void   do_flush(FILE* dest) override;
 };
 EZLOG_NAMESPACE_END

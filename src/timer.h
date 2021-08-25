@@ -11,18 +11,18 @@ private:
     void _thread_func(callback_t callback, unsigned int seconds);
 
 public:
-    timer(callback_t callback, unsigned int seconds);
+    timer();
     ~timer();
 
-    void start();
+    void start(callback_t callback, unsigned int seconds);
     void notify();
     void stop();
 
 private:
-    std::mutex              _mutex;
-    std::condition_variable _event;
-    std::atomic<bool>       _started;
-    std::atomic<bool>       _running;
-    std::thread             _thread;
+    std::mutex                   _mutex;
+    std::condition_variable      _event;
+    std::atomic<bool>            _started;
+    std::atomic<bool>            _running;
+    std::shared_ptr<std::thread> _thread;
 };
 EZLOG_NAMESPACE_END
