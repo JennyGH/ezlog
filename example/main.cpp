@@ -16,19 +16,19 @@ static void _my_log_function(unsigned int level, const char* function, const cha
     va_end(args);
 }
 
-static void _assert_hook(const char* expr, const char* file, unsigned int line)
+static void _assert_hook(void*, const char* expr, const char* file, unsigned int line)
 {
     LOG_DEBUG("Assert failed, expr: %s", expr);
     //_my_log_function(EZLOG_LEVEL_FATAL, __FUNCTION__, file, line, "Assert fail: `%s` is `false`!", expr);
     // while (true) {}
 }
 
-static bool _roll_hook(unsigned long file_size)
+static bool _roll_hook(void*, unsigned long file_size)
 {
     return file_size >= 1024 * 1024;
 }
 
-static const char* _get_output_path_hook()
+static const char* _get_output_path_hook(void*)
 {
     return "./logs/trace.log";
 }
@@ -60,13 +60,13 @@ int main(int argc, char* argv[])
     ezlog_set_format(EZLOG_LEVEL_DEBUG, EZLOG_FORMAT_ALL & (~(EZLOG_FORMAT_FILE_INFO | EZLOG_FORMAT_LINE_INFO))); // 不输出文件信息
 
     // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
-    ezlog_set_assert_hook(_assert_hook);
+    ezlog_set_assert_hook(_assert_hook, nullptr);
     // （可选）启用日志滚动
     ezlog_set_log_roll_enabled(true);
     // （可选）告诉我该以什么方式来判断是否应该滚动日志了
-    ezlog_set_roll_hook(_roll_hook);
+    ezlog_set_roll_hook(_roll_hook, nullptr);
     // 告诉我日志该输出到哪里
-    ezlog_set_get_output_path_hook(_get_output_path_hook);
+    ezlog_set_get_output_path_hook(_get_output_path_hook, nullptr);
 
     // 输出些东西
     for (size_t i = 0; i < 10000; i++)

@@ -47,20 +47,20 @@ extern "C"
      * @param file 触发 EZLOG_ASSERT 的文件路径
      * @param line 触发 EZLOG_ASSERT 的代码行号
      */
-    typedef void (*ezlog_assert_hook_t)(const char* expr, const char* file, unsigned int line);
+    typedef void (*ezlog_assert_hook_t)(void* context, const char* expr, const char* file, unsigned int line);
 
     /**
      * 获取日志输出路径的钩子函数
      * @return 要输出的日志路径
      */
-    typedef const char* (*ezlog_get_output_path_hook_t)();
+    typedef const char* (*ezlog_get_output_path_hook_t)(void* context);
 
     /**
      * 日志滚动钩子函数
      * @param file_size 当前日志文件大小
      * @return 返回真值会创建并重定向输出到新的日志文件
      */
-    typedef bool (*ezlog_roll_hook_t)(unsigned long file_size);
+    typedef bool (*ezlog_roll_hook_t)(void* context, unsigned long file_size);
 
     /**
      * 初始化日志库
@@ -109,19 +109,19 @@ extern "C"
      * 设置日志滚动钩子函数，用于判断何时该产生新的日志文件
      * @param hook 钩子函数
      */
-    void ezlog_set_roll_hook(ezlog_roll_hook_t hook);
+    void ezlog_set_roll_hook(ezlog_roll_hook_t hook, void* context);
 
     /**
      * 设置断言钩子函数，由上层处理断言情况
      * @param hook 钩子函数
      */
-    void ezlog_set_assert_hook(ezlog_assert_hook_t hook);
+    void ezlog_set_assert_hook(ezlog_assert_hook_t hook, void* context);
 
     /**
      * 设置获取输出路径的钩子函数
      * @param hook 钩子函数
      */
-    void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook);
+    void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook, void* context);
 
     /**
      * 设置输出格式

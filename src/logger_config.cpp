@@ -10,17 +10,17 @@ static unsigned int g_level_format[] = {
     EZLOG_FORMAT_ALL,
 };
 
-static inline void _default_assert_callback(const char* expr, const char* file, unsigned int line)
+static inline void _default_assert_callback(void*, const char* expr, const char* file, unsigned int line)
 {
     std::this_thread::sleep_for(std::chrono::seconds(0xffffffff));
 }
 
-static inline bool _default_roll_callback(unsigned long)
+static inline bool _default_roll_callback(void*, unsigned long)
 {
     return false;
 }
 
-static inline const char* _default_get_output_path_callback()
+static inline const char* _default_get_output_path_callback(void*)
 {
     return EZLOG_STDOUT;
 }
@@ -37,6 +37,9 @@ logger_config::logger_config()
     , _roll_callback(_default_roll_callback)
     , _assert_callback(_default_assert_callback)
     , _get_output_path_callback(_default_get_output_path_callback)
+    , _roll_callback_context(nullptr)
+    , _assert_callback_context(nullptr)
+    , _get_output_path_callback_context(nullptr)
 
 {
 }
@@ -63,19 +66,22 @@ void logger_config::set_async_log_flush_interval(unsigned int seconds)
     this->_async_log_flush_interval = seconds;
 }
 
-void logger_config::set_roll_callback(ezlog_roll_hook_t callback)
+void logger_config::set_roll_callback(ezlog_roll_hook_t callback, void* context)
 {
-    this->_roll_callback = callback;
+    this->_roll_callback         = callback;
+    this->_roll_callback_context = context;
 }
 
-void logger_config::set_assert_callback(ezlog_assert_hook_t callback)
+void logger_config::set_assert_callback(ezlog_assert_hook_t callback, void* context)
 {
-    this->_assert_callback = callback;
+    this->_assert_callback         = callback;
+    this->_assert_callback_context = context;
 }
 
-void logger_config::set_get_output_path_callback(ezlog_get_output_path_hook_t callback)
+void logger_config::set_get_output_path_callback(ezlog_get_output_path_hook_t callback, void* context)
 {
-    this->_get_output_path_callback = callback;
+    this->_get_output_path_callback         = callback;
+    this->_get_output_path_callback_context = context;
 }
 
 void logger_config::enable_roll_log(bool enable)
@@ -135,20 +141,20 @@ int logger_config::get_async_log_flush_interval() const
 std::string logger_config::get_log_path() const
 {
     ezlog_get_output_path_hook_t callback = this->_get_output_path_callback;
-    const char*                  path     = callback();
+    const char*                  path     = callback(this->_get_output_path_callback_context);
     return nullptr == path ? "" : path;
 }
 
 bool logger_config::should_roll_log(unsigned long size) const
 {
     ezlog_roll_hook_t callback = this->_roll_callback;
-    return this->_is_enabled_roll && callback(size);
+    return this->_is_enabled_roll && callback(this->_roll_callback_context, size);
 }
 
 void logger_config::active_assert(const char* expr, const char* file, unsigned int line)
 {
     ezlog_assert_hook_t callback = this->_assert_callback;
-    callback(expr, file, line);
+    callback(this->_assert_callback_context, expr, file, line);
 }
 
 EZLOG_NAMESPACE_END

@@ -22,7 +22,6 @@ private:
     std::mutex                   _mutex;
     std::condition_variable      _event;
     std::atomic<bool>            _started;
-    std::atomic<bool>            _running;
     std::shared_ptr<std::thread> _thread;
 };
 EZLOG_NAMESPACE_END

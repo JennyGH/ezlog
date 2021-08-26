@@ -10,9 +10,9 @@ public:
     void set_log_format(unsigned int level, unsigned int flag);
     void set_async_log_buffer_size(unsigned int size);
     void set_async_log_flush_interval(unsigned int seconds);
-    void set_roll_callback(ezlog_roll_hook_t callback);
-    void set_assert_callback(ezlog_assert_hook_t callback);
-    void set_get_output_path_callback(ezlog_get_output_path_hook_t callback);
+    void set_roll_callback(ezlog_roll_hook_t callback, void* context);
+    void set_assert_callback(ezlog_assert_hook_t callback, void* context);
+    void set_get_output_path_callback(ezlog_get_output_path_hook_t callback, void* context);
 
     void enable_roll_log(bool enable);
     void enable_color_log(bool enable);
@@ -40,5 +40,8 @@ private:
     std::atomic<ezlog_roll_hook_t>            _roll_callback;
     std::atomic<ezlog_assert_hook_t>          _assert_callback;
     std::atomic<ezlog_get_output_path_hook_t> _get_output_path_callback;
+    std::atomic<void*>                        _roll_callback_context;
+    std::atomic<void*>                        _assert_callback_context;
+    std::atomic<void*>                        _get_output_path_callback_context;
 };
 EZLOG_NAMESPACE_END

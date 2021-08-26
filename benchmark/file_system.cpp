@@ -24,7 +24,6 @@ static int _walk(const ez::base::path& path, ez::base::file_system::walk_filter_
     {
         return -1;
     }
-    SCOPE_PTR_OF(dir_ptr, closedir);
 
     struct dirent* dir_info = NULL;
     struct stat    file_state;
@@ -45,6 +44,7 @@ static int _walk(const ez::base::path& path, ez::base::file_system::walk_filter_
             }
         }
     }
+    ::closedir(dir_ptr);
 #else
     WIN32_FIND_DATAA data;
     HANDLE           handle = ::FindFirstFileA(path.join("*"), &data);

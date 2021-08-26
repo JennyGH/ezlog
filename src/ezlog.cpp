@@ -72,27 +72,27 @@ void ezlog_set_level(unsigned int level)
     }
 }
 
-void ezlog_set_roll_hook(ezlog_roll_hook_t hook)
+void ezlog_set_roll_hook(ezlog_roll_hook_t hook, void* context)
 {
     if (nullptr != g_logger_config)
     {
-        g_logger_config->set_roll_callback(hook);
+        g_logger_config->set_roll_callback(hook, context);
     }
 }
 
-void ezlog_set_assert_hook(ezlog_assert_hook_t hook)
+void ezlog_set_assert_hook(ezlog_assert_hook_t hook, void* context)
 {
     if (nullptr != g_logger_config)
     {
-        g_logger_config->set_assert_callback(hook);
+        g_logger_config->set_assert_callback(hook, context);
     }
 }
 
-void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook)
+void ezlog_set_get_output_path_hook(ezlog_get_output_path_hook_t hook, void* context)
 {
     if (nullptr != g_logger_config)
     {
-        g_logger_config->set_get_output_path_callback(hook);
+        g_logger_config->set_get_output_path_callback(hook, context);
     }
 }
 

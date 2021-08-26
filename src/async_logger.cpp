@@ -50,7 +50,7 @@ void async_logger::flush_all_idle_buffers(FILE* dest)
 
 async_logger::~async_logger()
 {
-    this->flush();
+    this->_timer.stop();
 }
 
 size_t async_logger::do_commit(FILE* dest, const char* str)

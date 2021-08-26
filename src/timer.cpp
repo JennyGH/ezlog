@@ -4,21 +4,18 @@ EZLOG_NAMESPACE_BEGIN
 
 timer::timer()
     : _started(false)
-    , _running(false)
     , _thread(nullptr)
 {
 }
 
 void timer::_thread_func(callback_t callback, unsigned int seconds)
 {
-    this->_running = true;
     while (this->_started && callback)
     {
-        callback();
         std::unique_lock<std::mutex> scope_lock(this->_mutex);
         this->_event.wait_for(scope_lock, std::chrono::seconds(seconds));
+        callback();
     }
-    this->_running = false;
 }
 
 timer::~timer()
@@ -44,7 +41,7 @@ void timer::notify()
 
 void timer::stop()
 {
-    if (this->_running)
+    if (nullptr != this->_thread)
     {
         if (this->_thread->joinable())
         {
@@ -52,6 +49,7 @@ void timer::stop()
             this->notify();
             this->_thread->join();
         }
+        this->_thread = nullptr;
     }
 }
 
