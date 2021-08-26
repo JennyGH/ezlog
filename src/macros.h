@@ -26,6 +26,10 @@
 #define EZLOG_UNIQUE(name)    _MERGE(name, __COUNTER__)
 #define EZLOG_SCOPE_LOCK(mtx) std::unique_lock<std::mutex> EZLOG_UNIQUE(_scope_lock_)(mtx)
 
+#ifndef SCOPE_PTR_OF
+#    define SCOPE_PTR_OF(obj, ...) std::shared_ptr<typename std::remove_pointer<decltype(obj)>::type> _scope_##obj##_ptr_(obj, ##__VA_ARGS__)
+#endif // !SCOPE_PTR_OF
+
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
 // log front color

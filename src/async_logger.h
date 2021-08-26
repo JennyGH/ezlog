@@ -35,7 +35,7 @@ private:
                 }
                 this->_idle_buffers.pop();
                 {
-                    EZLOG_SCOPE_LOCK(this->_busy_mutex);
+                    // EZLOG_SCOPE_LOCK(this->_busy_mutex);
                     this->_busy_buffers.push(buffer);
                 }
                 if (this->_idle_buffers.empty())

@@ -25,12 +25,12 @@ static void _assert_hook(const char* expr, const char* file, unsigned int line)
 
 static bool _roll_hook(unsigned long file_size)
 {
-    return false;
+    return file_size >= 1024 * 1024;
 }
 
 static const char* _get_output_path_hook()
 {
-    return EZLOG_STDOUT;
+    return "./logs/trace.log";
 }
 
 int main(int argc, char* argv[])
@@ -69,12 +69,15 @@ int main(int argc, char* argv[])
     ezlog_set_get_output_path_hook(_get_output_path_hook);
 
     // 输出些东西
-    LOG_FATAL("Test %s log.", "fatal");
-    LOG_ERROR("Test %s log.", "error");
-    LOG_WARN("Test %s log.", "warn");
-    LOG_INFO("Test %s log.", "info");
-    LOG_DEBUG("Test %s log.", "debug");
-    LOG_VERBOSE("Test %s log.", "verbose");
+    for (size_t i = 0; i < 10000; i++)
+    {
+        LOG_FATAL("Test %s log.", "fatal");
+        LOG_ERROR("Test %s log.", "error");
+        LOG_WARN("Test %s log.", "warn");
+        LOG_INFO("Test %s log.", "info");
+        LOG_DEBUG("Test %s log.", "debug");
+        LOG_VERBOSE("Test %s log.", "verbose");
+    }
 
     // 简单地输出十六进制
     LOG_HEX(bytes, sizeof(bytes));

@@ -49,7 +49,7 @@ void safe_buffer::resize(size_t size)
     {
         _size   = size;
         _remain = size;
-        ::memset(_buffer, 0, _size);
+        //::memset(_buffer, 0, _size);
     }
 }
 
@@ -82,10 +82,10 @@ size_t safe_buffer::push(const char* format, ...)
 
 size_t safe_buffer::push(const char* format, va_list args)
 {
-    EZLOG_SCOPE_LOCK(this->_mutex);
     size_t used = _size - _remain;
-    char*  dest = _buffer + used;
-    int    size = ::vsnprintf(dest, _remain, format, args);
+    EZLOG_SCOPE_LOCK(this->_mutex);
+    char* dest = _buffer + used;
+    int   size = ::vsnprintf(dest, _remain, format, args);
     if (size < 0)
     {
         size = 0;
@@ -108,10 +108,10 @@ size_t safe_buffer::flush(FILE* dest_stream)
         return 0;
     }
     size_t size = 0;
+    size_t used = _size - _remain;
     {
         EZLOG_SCOPE_LOCK(this->_mutex);
-        size_t used = _size - _remain;
-        size        = ::fwrite(_buffer, sizeof(char), used, dest_stream);
+        size = ::fwrite(_buffer, sizeof(char), used, dest_stream);
     }
     ::fflush(dest_stream);
     return size;
@@ -129,12 +129,12 @@ bool safe_buffer::empty() const
 
 void safe_buffer::clear()
 {
-    EZLOG_SCOPE_LOCK(this->_mutex);
-    if (nullptr != _buffer)
-    {
-        ::memset(_buffer, 0, _size);
-        _remain = _size.load();
-    }
+    _remain = _size.load();
+    // EZLOG_SCOPE_LOCK(this->_mutex);
+    // if (nullptr != _buffer)
+    //{
+    //    ::memset(_buffer, 0, _size);
+    //}
 }
 safe_buffer& safe_buffer::operator=(const safe_buffer& that)
 {

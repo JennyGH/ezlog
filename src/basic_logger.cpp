@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "basic_logger.h"
+#include "file_system.h"
 
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
 
@@ -213,17 +214,29 @@ void basic_logger::flush()
         return;
     }
 
-    const auto path = this->_config->get_log_path();
+    const auto enable_roll = this->_config->is_enabled_roll();
+    const auto path        = this->_config->get_log_path();
     if (_dest->get_path() != path)
     {
         _dest = std::make_shared<destination>(path);
     }
-    if (this->_config->is_enabled_roll() && this->_config->should_roll_log(this->_dest->get_size()))
+    if (enable_roll && this->_config->should_roll_log(this->_dest->get_size()))
     {
         std::string basename;
         std::string suffix;
         _get_basename_and_suffix(path, basename, suffix);
-        const std::string roll_log_path = basename + "(" + std::to_string(this->_roll_index++) + ")" + suffix;
+        std::string roll_log_path;
+        while (true)
+        {
+            roll_log_path = basename + "(" + std::to_string(this->_roll_index++) + ")" + suffix;
+            if (!file_system::exists(roll_log_path))
+            {
+                break;
+            }
+        }
+        _dest = nullptr;
+        file_system::rename(path, roll_log_path);
+        _dest = std::make_shared<destination>(path);
     }
 
     {

@@ -20,25 +20,20 @@
 #else
 #    include <unistd.h>
 #endif // _MSC_VER
+#include "file_system.h"
 
 #if __cpp11
 #    define LOG_COUNT      100000
 #    define ASYNC_SIZE     (1024 * 1024)
 #    define ROLL_SIZE      (1024 * 1024 * 10)
 #    define BENCHMARK_UNIT benchmark::kMillisecond
-
-#    define LOG_DIR "logs"
-#    if WIN32
-#        define REMOVE_ALL_LOG_FILES()    /*system("DEL /f /s /q \"" LOG_DIR                                                                                   \
-                                             "\\*.log\"")*/
-#    else
-#        define REMOVE_ALL_LOG_FILES() system("rm -f " LOG_DIR "/*")
-#    endif // WIN32
+#    define LOG_DIR        "./logs"
 
 #    define INIT_LOG_CONFIGS(async_buffer_size, roll_size)                                                                                                     \
         do                                                                                                                                                     \
         {                                                                                                                                                      \
-            REMOVE_ALL_LOG_FILES();                                                                                                                            \
+            ez::base::file_system::rmdir(LOG_DIR);                                                                                                             \
+            ez::base::file_system::mkdir(LOG_DIR);                                                                                                             \
             ezlog_init();                                                                                                                                      \
             ezlog_set_log_roll_enabled((roll_size) > 0);                                                                                                       \
             ezlog_set_log_color_enabled(true);                                                                                                                 \
@@ -63,7 +58,7 @@
             state.SetBytesProcessed(bytes);                                                                                                                    \
             ezlog_deinit();                                                                                                                                    \
         }                                                                                                                                                      \
-        BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)
+        BENCHMARK(name##_hex)->Unit(BENCHMARK_UNIT)->MinTime(3)
 
 #    define DECLARE_BENCHMARK_LOG_FMT_FUNCTION(name, async_buffer_size, roll_size)                                                                             \
         static void name##_formated(benchmark::State& state)                                                                                                   \
@@ -77,7 +72,7 @@
             state.SetBytesProcessed(bytes);                                                                                                                    \
             ezlog_deinit();                                                                                                                                    \
         }                                                                                                                                                      \
-        BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)
+        BENCHMARK(name##_formated)->Unit(BENCHMARK_UNIT)->MinTime(3)
 
 static unsigned char g_test_bytes[39] = {0};
 
@@ -86,14 +81,14 @@ static const char* get_output_path_hook()
     return LOG_DIR "/ezlog_benchmark.log";
 }
 
-//DECLARE_BENCHMARK_LOG_HEX_FUNCTION(sync_log, 0, 0);
-//DECLARE_BENCHMARK_LOG_HEX_FUNCTION(sync_roll_log, 0, ROLL_SIZE);
-//DECLARE_BENCHMARK_LOG_HEX_FUNCTION(async_log, ASYNC_SIZE, 0);
-//DECLARE_BENCHMARK_LOG_HEX_FUNCTION(async_roll_log, ASYNC_SIZE, ROLL_SIZE);
+DECLARE_BENCHMARK_LOG_HEX_FUNCTION(sync_log, 0, 0);
+DECLARE_BENCHMARK_LOG_HEX_FUNCTION(async_log, ASYNC_SIZE, 0);
+DECLARE_BENCHMARK_LOG_HEX_FUNCTION(sync_roll_log, 0, ROLL_SIZE);
+DECLARE_BENCHMARK_LOG_HEX_FUNCTION(async_roll_log, ASYNC_SIZE, ROLL_SIZE);
 
 DECLARE_BENCHMARK_LOG_FMT_FUNCTION(sync_log, 0, 0);
-DECLARE_BENCHMARK_LOG_FMT_FUNCTION(sync_roll_log, 0, ROLL_SIZE);
 DECLARE_BENCHMARK_LOG_FMT_FUNCTION(async_log, ASYNC_SIZE, 0);
+DECLARE_BENCHMARK_LOG_FMT_FUNCTION(sync_roll_log, 0, ROLL_SIZE);
 DECLARE_BENCHMARK_LOG_FMT_FUNCTION(async_roll_log, ASYNC_SIZE, ROLL_SIZE);
 
 BENCHMARK_MAIN();

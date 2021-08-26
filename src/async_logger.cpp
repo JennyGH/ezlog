@@ -19,14 +19,14 @@ async_logger::async_logger(config_t config)
 
 void async_logger::flush_all_busy_buffers(FILE* dest)
 {
-    EZLOG_SCOPE_LOCK(this->_busy_mutex);
+    // EZLOG_SCOPE_LOCK(this->_busy_mutex);
     while (!this->_busy_buffers.empty())
     {
         buffer_ptr_t buffer = this->_busy_buffers.front();
         buffer->flush(dest);
         buffer->clear();
         {
-            EZLOG_SCOPE_LOCK(this->_idle_mutex);
+            // EZLOG_SCOPE_LOCK(this->_idle_mutex);
             this->_idle_buffers.push(buffer);
             this->_busy_buffers.pop();
         }
@@ -36,7 +36,7 @@ void async_logger::flush_all_busy_buffers(FILE* dest)
 
 void async_logger::flush_all_idle_buffers(FILE* dest)
 {
-    EZLOG_SCOPE_LOCK(this->_idle_mutex);
+    // EZLOG_SCOPE_LOCK(this->_idle_mutex);
     const size_t count_of_buffers = this->_idle_buffers.size();
     for (size_t i = 0; i < count_of_buffers; i++)
     {
