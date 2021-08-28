@@ -2,10 +2,9 @@
 #include "logger.h"
 EZLOG_NAMESPACE_BEGIN
 
-size_t logger::do_commit(FILE* dest, const char* str)
+size_t logger::do_commit(FILE* dest, const char* str, const size_t& length)
 {
-    int commited_size = ::fprintf(dest, "%s", str);
-    return commited_size < 0 ? 0 : commited_size;
+    return ::fwrite(str, 1, length, dest);
 }
 
 size_t logger::do_commit(FILE* dest, const char* format, va_list args)

@@ -94,7 +94,6 @@ ENDIF() # ENDIF MSVC
 # Add C/C++ Macros
 ADD_DEFINITIONS(
 # You can add macro definition directory here, like:
-#   -DTEST_DEFNITION=1 # ==> #define TEST_DEFNITION 1
     -DPROJECT_ROOT="${CMAKE_SOURCE_DIR}"
 )
 

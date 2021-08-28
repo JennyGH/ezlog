@@ -4,6 +4,25 @@
 
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
 
+static inline char _half_byte_to_hex_char(unsigned char half_byte)
+{
+    if (0 <= half_byte && half_byte <= 9)
+    {
+        return '0' + half_byte;
+    }
+    if (0xa <= half_byte && half_byte <= 0xf)
+    {
+        return 'a' + (half_byte - 0xa);
+    }
+    return 0;
+}
+
+static inline void _byte_to_hex(unsigned char byte, char* hex)
+{
+    hex[0] = _half_byte_to_hex_char((byte >> 4) & 0x0f);
+    hex[1] = _half_byte_to_hex_char((byte >> 0) & 0x0f);
+}
+
 static void _get_basename_and_suffix(const std::string& path, std::string& basename, std::string& suffix)
 {
     if (path.empty())
@@ -81,46 +100,8 @@ basic_logger::basic_logger(config_t config)
     _dest = std::make_shared<destination>(_config->get_log_path());
 }
 
-basic_logger::basic_logger(const basic_logger& that)
-    : _dest(that._dest)
-    , _config(that._config)
+std::string basic_logger::format_log_head(unsigned int level, const char* file, const size_t& line, const char* function) const
 {
-}
-
-basic_logger::~basic_logger() {}
-
-const std::string& basic_logger::get_destination() const
-{
-    return _dest->get_path();
-}
-
-void basic_logger::set_config(config_t config)
-{
-    _config = config;
-}
-
-size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...)
-{
-    if (nullptr == _dest || !this->_dest->is_writable())
-    {
-        return 0;
-    }
-    va_list args;
-    va_start(args, format);
-    size_t commited_size = this->commit(level, file, line, function, format, args);
-    va_end(args);
-    return commited_size;
-}
-
-size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args)
-{
-#define _DO_COMMIT(...) do_commit(*this->_dest, __VA_ARGS__)
-
-    if (nullptr == _dest || !this->_dest->is_writable())
-    {
-        return 0;
-    }
-
     const auto  config           = this->_config;
     int         format_bits      = config->get_log_format(level);
     bool        is_enabled_color = config->is_enabled_color();
@@ -128,7 +109,6 @@ size_t basic_logger::commit(unsigned int level, const char* file, const size_t& 
     const char* color            = is_enabled_color ? g_log_level_colors[level] : nullptr;
 
     std::string log_head;
-    std::string log_tail;
 
     // Try write color.
     if (nullptr != color)
@@ -155,6 +135,18 @@ size_t basic_logger::commit(unsigned int level, const char* file, const size_t& 
         log_head.append(1, '[').append(function).append("] ");
     }
 
+    return log_head;
+}
+
+std::string basic_logger::format_log_tail(unsigned int level, const char* file, const size_t& line, const char* function) const
+{
+    const auto  config           = this->_config;
+    int         format_bits      = config->get_log_format(level);
+    bool        is_enabled_color = config->is_enabled_color();
+    const char* tag              = g_log_level_tags[level];
+    const char* color            = is_enabled_color ? g_log_level_colors[level] : nullptr;
+
+    std::string log_tail;
     // Try to write file info and line info.
     {
         if ((_IS_FORMAT_SET(format_bits, EZLOG_FORMAT_FILE_INFO) || _IS_FORMAT_SET(format_bits, EZLOG_FORMAT_LINE_INFO)) && (nullptr != file || line > 0))
@@ -193,18 +185,103 @@ size_t basic_logger::commit(unsigned int level, const char* file, const size_t& 
 
     log_tail.append(1, '\n');
 
+    return log_tail;
+}
+
+basic_logger::basic_logger(const basic_logger& that)
+    : _dest(that._dest)
+    , _config(that._config)
+{
+}
+
+basic_logger::~basic_logger() {}
+
+const std::string& basic_logger::get_destination() const
+{
+    return _dest->get_path();
+}
+
+void basic_logger::set_config(config_t config)
+{
+    _config = config;
+}
+
+size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, ...)
+{
+    if (nullptr == _dest || !this->_dest->is_writable())
+    {
+        return 0;
+    }
+    va_list args;
+    va_start(args, format);
+    size_t commited_size = this->commit(level, file, line, function, format, args);
+    va_end(args);
+    return commited_size;
+}
+
+size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const char* format, va_list args)
+{
+    if (nullptr == _dest || !this->_dest->is_writable())
+    {
+        return 0;
+    }
+
+    std::string log_head = format_log_head(level, file, line, function);
+    std::string log_tail = format_log_tail(level, file, line, function);
+
     size_t commited_size = 0;
     {
         EZLOG_SCOPE_LOCK(this->_mutex);
-        commited_size += _DO_COMMIT(log_head.c_str());
-        commited_size += _DO_COMMIT(format, args);
-        commited_size += _DO_COMMIT(log_tail.c_str());
+        commited_size += this->do_commit(*this->_dest, log_head.c_str(), log_head.length());
+        commited_size += this->do_commit(*this->_dest, format, args);
+        commited_size += this->do_commit(*this->_dest, log_tail.c_str(), log_tail.length());
     }
 
     this->flush();
 
     return commited_size;
-#undef _DO_COMMIT
+}
+
+size_t basic_logger::commit(unsigned int level, const char* file, const size_t& line, const char* function, const unsigned char* bytes, const size_t& size)
+{
+    if (nullptr == _dest || !this->_dest->is_writable())
+    {
+        return 0;
+    }
+
+    std::string log_head = format_log_head(level, file, line, function);
+    std::string log_tail = format_log_tail(level, file, line, function);
+
+    size_t commited_size = 0;
+    {
+        size_t round   = size / 8;
+        size_t remain  = size % 8;
+        char   hex[16] = {0};
+        EZLOG_SCOPE_LOCK(this->_mutex);
+        commited_size += this->do_commit(*this->_dest, log_head.c_str(), log_head.length());
+        for (size_t i = 0; i < round; i++)
+        {
+            _byte_to_hex(bytes[0 + i * 8], hex + 0 * 2);
+            _byte_to_hex(bytes[1 + i * 8], hex + 1 * 2);
+            _byte_to_hex(bytes[2 + i * 8], hex + 2 * 2);
+            _byte_to_hex(bytes[3 + i * 8], hex + 3 * 2);
+            _byte_to_hex(bytes[4 + i * 8], hex + 4 * 2);
+            _byte_to_hex(bytes[5 + i * 8], hex + 5 * 2);
+            _byte_to_hex(bytes[6 + i * 8], hex + 6 * 2);
+            _byte_to_hex(bytes[7 + i * 8], hex + 7 * 2);
+            commited_size += this->do_commit(*this->_dest, hex, sizeof(hex));
+        }
+        for (size_t i = 0; i < remain; i++)
+        {
+            _byte_to_hex(bytes[i + round * 8], hex + i * 2);
+        }
+        commited_size += this->do_commit(*this->_dest, hex, remain * 2);
+        commited_size += this->do_commit(*this->_dest, log_tail.c_str(), log_tail.length());
+    }
+
+    this->flush();
+
+    return commited_size;
 }
 
 void basic_logger::flush()
@@ -239,10 +316,7 @@ void basic_logger::flush()
         _dest = std::make_shared<destination>(path);
     }
 
-    {
-        EZLOG_SCOPE_LOCK(this->_mutex);
-        this->do_flush(*_dest);
-    }
+    this->do_flush(*_dest);
 }
 
 EZLOG_NAMESPACE_END

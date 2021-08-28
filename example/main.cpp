@@ -30,12 +30,12 @@ static bool _roll_hook(void*, unsigned long file_size)
 
 static const char* _get_output_path_hook(void*)
 {
-    return "./logs/trace.log";
+    return PROJECT_ROOT "/logs/trace.log";
 }
 
 int main(int argc, char* argv[])
 {
-    static unsigned char bytes[] = {0, 1, 2, 3, 4};
+    static unsigned char bytes[256] = {0};
 
     // 初始化日志库
     ezlog_init();
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     ezlog_set_get_output_path_hook(_get_output_path_hook, nullptr);
 
     // 输出些东西
-    for (size_t i = 0; i < 10000; i++)
+    for (size_t i = 0; i < 100; i++)
     {
         LOG_FATAL("Test %s log.", "fatal");
         LOG_ERROR("Test %s log.", "error");
@@ -80,7 +80,10 @@ int main(int argc, char* argv[])
     }
 
     // 简单地输出十六进制
-    LOG_HEX(bytes, sizeof(bytes));
+    for (size_t i = 0; i < 100; i++)
+    {
+        LOG_HEX(bytes, sizeof(bytes));
+    }
 
     // 断言
     EZLOG_ASSERT(sizeof(bytes) >= 1024);

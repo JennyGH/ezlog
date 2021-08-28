@@ -183,14 +183,7 @@ size_t ezlog_write_hex(unsigned int level, const char* func, const char* file, u
     {
         return 0;
     }
-    std::string bytes_hex;
-    for (unsigned long index = 0; index < count_of_bytes; index++)
-    {
-        char hex[3] = {0};
-        sprintf_s(hex, "%02x", ((const unsigned char*)(bytes))[index]);
-        bytes_hex.append(hex);
-    }
-    return g_logger->commit(level, file, line, func, bytes_hex.c_str());
+    return g_logger->commit(level, file, line, func, (const unsigned char*)bytes, count_of_bytes);
 }
 
 void ezlog_deinit()

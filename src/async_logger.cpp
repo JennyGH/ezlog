@@ -6,45 +6,45 @@ EZLOG_NAMESPACE_BEGIN
 async_logger::async_logger(config_t config)
     : basic_logger(config)
 {
-    for (size_t i = 0; i < 4; i++)
-    {
-        this->_idle_buffers.push(std::make_shared<safe_buffer>(this->_config->get_async_log_buffer_size()));
-    }
     this->_timer.start(
         [this] {
-            this->flush();
+            this->flush_buffers();
         },
         this->_config->get_async_log_flush_interval());
 }
 
-void async_logger::flush_all_busy_buffers(FILE* dest)
+size_t async_logger::get_need_buffer_size(const char* fmt, va_list args)
 {
-    // EZLOG_SCOPE_LOCK(this->_busy_mutex);
-    while (!this->_busy_buffers.empty())
-    {
-        buffer_ptr_t buffer = this->_busy_buffers.front();
-        buffer->flush(dest);
-        buffer->clear();
-        {
-            // EZLOG_SCOPE_LOCK(this->_idle_mutex);
-            this->_idle_buffers.push(buffer);
-            this->_busy_buffers.pop();
-        }
-        _event.notify_one();
-    }
+    va_list tmp;
+    va_copy(tmp, args);
+    int need_size = vsnprintf(nullptr, 0, fmt, tmp);
+    va_end(tmp);
+    return need_size < 0 ? 0 : need_size;
 }
 
-void async_logger::flush_all_idle_buffers(FILE* dest)
+void async_logger::flush_buffers()
 {
-    // EZLOG_SCOPE_LOCK(this->_idle_mutex);
-    const size_t count_of_buffers = this->_idle_buffers.size();
-    for (size_t i = 0; i < count_of_buffers; i++)
+    std::queue<buffer_ptr_t> buffers;
     {
-        buffer_ptr_t buffer = this->_idle_buffers.front();
-        buffer->flush(dest);
-        buffer->clear();
-        this->_idle_buffers.pop();
-        this->_idle_buffers.push(buffer);
+        EZLOG_SCOPE_LOCK(this->_mutex);
+        std::swap(this->_buffers, buffers);
+    }
+    destination_ptr_t dest = nullptr;
+    while (!buffers.empty())
+    {
+        while (true)
+        {
+            dest = this->_dest;
+            if (nullptr == dest || !dest->is_writable())
+            {
+                EZLOG_CONSOLE("Waiting for `dest`.");
+                continue;
+            }
+            break;
+        }
+        buffer_ptr_t buffer = buffers.front();
+        buffer->flush(*dest);
+        buffers.pop();
     }
 }
 
@@ -53,9 +53,9 @@ async_logger::~async_logger()
     this->_timer.stop();
 }
 
-size_t async_logger::do_commit(FILE* dest, const char* str)
+size_t async_logger::do_commit(FILE* dest, const char* str, const size_t& length)
 {
-    return this->try_commit(dest, str);
+    return this->try_commit(dest, length + 1, str);
 }
 
 size_t async_logger::do_commit(FILE* dest, const char* format, va_list args)
@@ -65,8 +65,7 @@ size_t async_logger::do_commit(FILE* dest, const char* format, va_list args)
 
 void async_logger::do_flush(FILE* dest)
 {
-    this->flush_all_busy_buffers(dest);
-    this->flush_all_idle_buffers(dest);
+    this->_timer.notify();
 }
 
 EZLOG_NAMESPACE_END

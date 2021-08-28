@@ -27,7 +27,7 @@
 #    define ASYNC_SIZE     (1024 * 1024)
 #    define ROLL_SIZE      (1024 * 1024)
 #    define BENCHMARK_UNIT benchmark::kMillisecond
-#    define LOG_DIR        "./logs"
+#    define LOG_DIR        PROJECT_ROOT "/logs"
 
 static const char* get_output_path_hook(void* context)
 {
@@ -54,34 +54,53 @@ static inline void _init(unsigned int async_buffer_size, unsigned int roll_size)
     ezlog_set_get_output_path_hook(get_output_path_hook, nullptr);
 }
 
+// static void test_init_deinit(benchmark::State& state)
+//{
+//    for (auto _ : state)
+//    {
+//        _init(state.range_x(), state.range_y());
+//        LOG_DEBUG("test");
+//        ezlog_deinit();
+//    }
+//}
+// BENCHMARK(test_init_deinit)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, 0);
+// BENCHMARK(test_init_deinit)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, ROLL_SIZE);
+
 static void test_hex_log(benchmark::State& state)
 {
     _init(state.range_x(), state.range_y());
-    static unsigned char bytes[1024]  = {0};
-    size_t               log_bytes = 0;
+    static unsigned char bytes[8]     = {0};
+    size_t               log_bytes    = 0;
+    size_t               log_messages = 0;
     for (auto _ : state)
     {
         log_bytes += ezlog_write_hex(EZLOG_LEVEL_VERBOSE, __FUNCTION__, EZLOG_FILE_MACRO, __LINE__, bytes, sizeof(bytes));
+        log_messages++;
     }
     state.SetBytesProcessed(log_bytes);
+    state.SetItemsProcessed(log_messages);
     ezlog_deinit();
 }
-BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, 0);
-BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, ROLL_SIZE);
-BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, 0);
-BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, ROLL_SIZE);
 
 static void test_fmt_log(benchmark::State& state)
 {
     _init(state.range_x(), state.range_y());
-    size_t log_bytes = 0;
+    size_t log_bytes    = 0;
+    size_t log_messages = 0;
     for (auto _ : state)
     {
         log_bytes += ezlog_write_log(EZLOG_LEVEL_VERBOSE, __FUNCTION__, EZLOG_FILE_MACRO, __LINE__, "0x%08x", 0x12345678);
+        log_messages++;
     }
     state.SetBytesProcessed(log_bytes);
+    state.SetItemsProcessed(log_messages);
     ezlog_deinit();
 }
+
+BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, 0);
+BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, ROLL_SIZE);
+BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, 0);
+BENCHMARK(test_hex_log)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, ROLL_SIZE);
 BENCHMARK(test_fmt_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, 0);
 BENCHMARK(test_fmt_log)->Unit(BENCHMARK_UNIT)->ArgPair(0, ROLL_SIZE);
 BENCHMARK(test_fmt_log)->Unit(BENCHMARK_UNIT)->ArgPair(ASYNC_SIZE, 0);
