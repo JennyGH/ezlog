@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "basic_logger.h"
-#include "file_system.h"
+#include "system.h"
 
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
 
@@ -302,17 +302,14 @@ void basic_logger::flush()
         std::string basename;
         std::string suffix;
         _get_basename_and_suffix(path, basename, suffix);
-        std::string roll_log_path;
-        while (true)
+        std::string roll_log_path = basename + "(" + std::to_string(this->_roll_index = (this->_roll_index + 1) % 5) + ")" + suffix;
+
+        int rv = ::rename(path.c_str(), roll_log_path.c_str());
+        if (0 != rv)
         {
-            roll_log_path = basename + "(" + std::to_string(this->_roll_index++) + ")" + suffix;
-            if (!file_system::exists(roll_log_path))
-            {
-                break;
-            }
+            EZLOG_CONSOLE("Unable to rename log file from `%s` to `%s`, because: %s.", path.c_str(), roll_log_path.c_str(), get_last_error_message().c_str());
         }
-        _dest = nullptr;
-        file_system::rename(path, roll_log_path);
+
         _dest = std::make_shared<destination>(path);
     }
 
