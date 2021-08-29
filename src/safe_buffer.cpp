@@ -53,6 +53,11 @@ void safe_buffer::resize(size_t size)
     }
 }
 
+bool safe_buffer::pushable(const size_t& length, const char* string) const
+{
+    return length < _remain;
+}
+
 bool safe_buffer::pushable(const char* format, ...) const
 {
     va_list args;
@@ -69,6 +74,23 @@ bool safe_buffer::pushable(const char* format, va_list args) const
     int need_size = vsnprintf(nullptr, 0, format, tmp);
     va_end(tmp);
     return _remain > need_size;
+}
+
+size_t safe_buffer::push(const size_t& length, const char* string)
+{
+    size_t used = _size - _remain;
+    EZLOG_SCOPE_LOCK(this->_mutex);
+    char* dest = _buffer + used;
+    ::memcpy_s(dest, _remain, string, length);
+    if (length > _remain)
+    {
+        _remain = 0;
+    }
+    else
+    {
+        _remain -= length;
+    }
+    return length;
 }
 
 size_t safe_buffer::push(const char* format, ...)

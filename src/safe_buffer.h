@@ -8,8 +8,10 @@ public:
     ~safe_buffer();
 
     void   resize(size_t size);
+    bool   pushable(const size_t& length, const char* string) const;
     bool   pushable(const char* format, ...) const;
     bool   pushable(const char* format, va_list args) const;
+    size_t push(const size_t& length, const char* string);
     size_t push(const char* format, ...);
     size_t push(const char* format, va_list args);
     size_t flush(FILE* dest_stream);

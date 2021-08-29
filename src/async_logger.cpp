@@ -55,12 +55,29 @@ async_logger::~async_logger()
 
 size_t async_logger::do_commit(FILE* dest, const char* str, const size_t& length)
 {
-    return this->try_commit(dest, length + 1, str);
+    size_t commited_size = 0;
+    if (length > 0)
+    {
+        buffer_ptr_t buffer = std::make_shared<safe_buffer>(length);
+        commited_size       = buffer->push(length, str);
+        EZLOG_SCOPE_LOCK(this->_mutex);
+        _buffers.push(buffer);
+    }
+    return commited_size;
 }
 
 size_t async_logger::do_commit(FILE* dest, const char* format, va_list args)
 {
-    return this->try_commit(dest, format, args);
+    size_t need_size     = async_logger::get_need_buffer_size(format, args);
+    size_t commited_size = 0;
+    if (need_size > 0)
+    {
+        buffer_ptr_t buffer = std::make_shared<safe_buffer>(need_size);
+        commited_size       = buffer->push(format, args);
+        EZLOG_SCOPE_LOCK(this->_mutex);
+        _buffers.push(buffer);
+    }
+    return commited_size;
 }
 
 void async_logger::do_flush(FILE* dest)
