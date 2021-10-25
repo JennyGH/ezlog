@@ -1,8 +1,22 @@
 #include "pch.h"
+#include <sstream>
 #include "basic_logger.h"
 #include "system.h"
 
 #define _IS_FORMAT_SET(format_bits, bit) ((format_bits & bit) == bit)
+
+#ifdef ANDROID
+namespace std
+{
+    template<class T>
+    static inline std::string to_string(const T& src)
+    {
+        std::stringstream ss;
+        ss << src;
+        return ss.str();
+    }
+};
+#endif // ANDROID
 
 static inline char _half_byte_to_hex_char(unsigned char half_byte)
 {
