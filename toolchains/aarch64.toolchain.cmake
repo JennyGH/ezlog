@@ -1,0 +1,7 @@
+SET(CMAKE_SYSTEM_NAME              Linux)
+SET(CMAKE_SYSTEM_PROCESSOR         arm)
+# SET(CMAKE_SYSROOT                  $ENV{SDKTARGETSYSROOT})
+SET(CMAKE_C_COMPILER               $ENV{CROSS_COMPILE}gcc)
+SET(CMAKE_CXX_COMPILER             $ENV{CROSS_COMPILE}g++)
+SET(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -O0 -Wall -ggdb")
+SET(ARM                            TRUE)
