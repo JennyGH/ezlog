@@ -29,6 +29,7 @@ function build() {
           -DCMAKE_C_COMPILER=/usr/bin/gcc       \
           -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
           -DBUILD_SHARED=FALSE                  \
+          -DBUILD_EXAMPLE=TRUE \
           ..
     cmake --build . --config $BUILD_TYPE
     make install

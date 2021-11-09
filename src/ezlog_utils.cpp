@@ -6,6 +6,7 @@
 #if _MSC_VER
 #    include <Windows.h>
 #else
+#    include <sys/time.h>
 #    include <unistd.h>
 #    include <pthread.h>
 #endif // _MSC_VER
@@ -25,16 +26,18 @@ std::string ezlog_get_time_info()
         systime.wSecond,
         systime.wMilliseconds);
 #else
-    struct tm result;
-    time_t    timep = ::time(NULL);
-    ::localtime_r(&timep, &result);
+    struct tm      result;
+    struct timeval tv;
+    ::gettimeofday(&tv, NULL);
+    ::localtime_r(&tv.tv_sec, &result);
     snprintf(
         buffer,
         sizeof(buffer),
-        "%02d:%02d:%02d",
+        "%02d:%02d:%02d.%03d",
         result.tm_hour,
         result.tm_min,
-        result.tm_sec);
+        result.tm_sec,
+        tv.tv_usec / 1000);
 #endif // _MSC_VER
 
     return buffer;
@@ -45,7 +48,7 @@ std::size_t ezlog_get_time_info_length()
 #if _MSC_VER
     return 12;
 #else
-    return 8;
+    return 12;
 #endif // _MSC_VER
 }
 
