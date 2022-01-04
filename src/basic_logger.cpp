@@ -8,14 +8,14 @@
 #ifdef ANDROID
 namespace std
 {
-    template<class T>
+    template <class T>
     static inline std::string to_string(const T& src)
     {
         std::stringstream ss;
         ss << src;
         return ss.str();
     }
-};
+};     // namespace std
 #endif // ANDROID
 
 static inline char _half_byte_to_hex_char(unsigned char half_byte)

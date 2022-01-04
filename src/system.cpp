@@ -46,14 +46,14 @@ std::string get_error_message(int errcode)
 #else
     char buffer[1024] = {0};
 #    if ANDROID || iOS || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
-    int ret = ::strerror_r(errcode, buffer, sizeof(buffer));
+    int  ret          = ::strerror_r(errcode, buffer, sizeof(buffer));
     res.assign(buffer);
 #    else
     char* str = ::strerror_r(errcode, buffer, sizeof(buffer));
     res.assign(str);
 #    endif // ANDROID || iOS || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >=
            // 600) && !_GNU_SOURCE)
-#endif // _MSC_VER
+#endif     // _MSC_VER
     return res;
 }
 

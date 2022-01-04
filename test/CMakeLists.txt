@@ -1,30 +1,30 @@
-PROJECT(ezlog_test)
+project(ezlog_test)
 
-FILE(GLOB_RECURSE INCLUDE_FILES
+file(GLOB_RECURSE INCLUDE_FILES
     ${PROJECT_SOURCE_DIR}/*.h
     ${PROJECT_SOURCE_DIR}/*.hpp
 )
 
-FILE(GLOB_RECURSE SOURCE_FILES
+file(GLOB_RECURSE SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/*.c
     ${PROJECT_SOURCE_DIR}/*.cpp
 )
     
-SOURCE_GROUP("Header Files" FILES "${INCLUDE_FILES}")
-SOURCE_GROUP("Source Files" FILES "${SOURCE_FILES}")
+source_group("Header Files" FILES "${INCLUDE_FILES}")
+source_group("Source Files" FILES "${SOURCE_FILES}")
 
-ADD_EXECUTABLE(
+add_executable(
     ${PROJECT_NAME}
     ${INCLUDE_FILES}
     ${SOURCE_FILES}
 )
 
-TARGET_LINK_LIBRARIES(
+target_link_libraries(
     ${PROJECT_NAME}
     ezlog
 )
 
-INSTALL(
+install(
     TARGETS ezlog_test
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

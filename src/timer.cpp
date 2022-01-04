@@ -56,7 +56,7 @@ void timer::start(callback_t callback, unsigned int seconds)
 #    else
     ::pthread_create(&_thread, nullptr, _thread_func, this);
 #    endif // _MSC_VER
-#endif // USE_STD_THREAD
+#endif     // USE_STD_THREAD
 }
 
 void timer::notify()
@@ -89,7 +89,7 @@ void timer::stop()
     thread_return_t thread_return_value;
     ::pthread_join(_thread, &thread_return_value);
 #    endif // _MSC_VER
-#endif // USE_STD_THREAD
+#endif     // USE_STD_THREAD
 }
 
 EZLOG_NAMESPACE_END

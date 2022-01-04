@@ -1,42 +1,42 @@
-PROJECT(ezlog_benchmark_test)
+project(ezlog_benchmark_test)
 
-FILE(GLOB_RECURSE INCLUDE_FILES
+file(GLOB_RECURSE INCLUDE_FILES
     ${PROJECT_SOURCE_DIR}/*.h
     ${PROJECT_SOURCE_DIR}/*.hpp
 )
 
-FILE(GLOB_RECURSE SOURCE_FILES 
+file(GLOB_RECURSE SOURCE_FILES 
     ${PROJECT_SOURCE_DIR}/*.c
     ${PROJECT_SOURCE_DIR}/*.cpp
 )
     
-SOURCE_GROUP("Header Files" FILES "${INCLUDE_FILES}")
-SOURCE_GROUP("Source Files" FILES "${SOURCE_FILES}")
+source_group("Header Files" FILES "${INCLUDE_FILES}")
+source_group("Source Files" FILES "${SOURCE_FILES}")
 
-ADD_EXECUTABLE(
+add_executable(
     ${PROJECT_NAME}
     ${INCLUDE_FILES}
     ${SOURCE_FILES}
 )
 
-SET(EX_LINK_LIBRARIES )
-IF(MSVC)
+set(EX_LINK_LIBRARIES )
+if(MSVC)
     LIST(APPEND EX_LINK_LIBRARIES shlwapi)
-ELSE()
+else()
     LIST(APPEND EX_LINK_LIBRARIES pthread)
-ENDIF() # ENDIF MSVC
+endif() # ENDIF MSVC
 
-IF(benchmark_FOUND)
+if(benchmark_FOUND)
     LIST(APPEND EX_LINK_LIBRARIES benchmark::benchmark)
-ENDIF() # ENDIF benchmark_FOUND
+endif() # ENDIF benchmark_FOUND
 
-TARGET_LINK_LIBRARIES(
+target_link_libraries(
     ${PROJECT_NAME}
     ${EX_LINK_LIBRARIES}
     ezlog
 )
 
-INSTALL(
+install(
     TARGETS ezlog_benchmark_test
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

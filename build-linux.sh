@@ -15,7 +15,7 @@ function build() {
     BUILD_TYPE=$1
 
     # Specify install dir, binary files will be installed to here:
-    INSTALL_DIR=$PROJECT_ROOT/built/linux/$PROCESSOR/$BUILD_TYPE
+    INSTALL_DIR=$PROJECT_ROOT/built/Linux/$PROCESSOR
 
     # =================== Try to make directory. ===================
     if [ ! -d $BUILD_DIR_NAME ]; then
@@ -26,11 +26,12 @@ function build() {
 
     cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE        \
           -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+          -DCMAKE_VERBOSE_MAKEFILE=TRUE         \
           -DCMAKE_C_COMPILER=/usr/bin/gcc       \
           -DCMAKE_CXX_COMPILER=/usr/bin/g++     \
-          -DBUILD_SHARED=FALSE                  \
+          -DBUILD_SHARED_LIBS=FALSE             \
           -DBUILD_TEST=TRUE                     \
-          -DBUILD_BENCHMARK_TEST=TRUE           \
+          -DBUILD_BENCHMARK=TRUE                \
           ..
     cmake --build . --config $BUILD_TYPE
     make install
@@ -38,4 +39,3 @@ function build() {
 }
 
 build Release
-# build Debug

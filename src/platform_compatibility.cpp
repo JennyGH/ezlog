@@ -1,28 +1,24 @@
 #include "platform_compatibility.h"
 #ifndef _MSC_VER
 #    include <sys/syscall.h>
-#    define __ASSERT_WITH_FILE(expr, file, line)                               \
-        do                                                                     \
-        {                                                                      \
-            if (!(expr))                                                       \
-            {                                                                  \
-                g_assert_hook(#expr, file, line);                              \
-            }                                                                  \
-            assert(expr);                                                      \
+#    define __ASSERT_WITH_FILE(expr, file, line)                                                                                                               \
+        do                                                                                                                                                     \
+        {                                                                                                                                                      \
+            if (!(expr))                                                                                                                                       \
+            {                                                                                                                                                  \
+                g_assert_hook(#expr, file, line);                                                                                                              \
+            }                                                                                                                                                  \
+            assert(expr);                                                                                                                                      \
         } while (0)
 
 #    define __ASSERT(expr) __ASSERT_WITH_FILE(expr, file, line)
 
-static void
-_default_assert_hook(const char* expr, const char* file, unsigned int line)
+static void _default_assert_hook(const char* expr, const char* file, unsigned int line)
 {
-    fprintf(
-        stderr,
-        "Assertion failed: %s, at file: \"%s\", line: %u",
-        expr,
-        file,
-        line);
+    fprintf(stderr, "Assertion failed: %s, at file: \"%s\", line: %u", expr, file, line);
 }
+
+EZLOG_NAMESPACE_BEGIN
 
 assert_hook_t g_assert_hook = _default_assert_hook;
 
@@ -35,13 +31,7 @@ void set_assert_hook(assert_hook_t hook)
 }
 
 #    ifdef __no_memcpy_s
-void __memcpy_s(
-    const char* file,
-    size_t      line,
-    void*       dest,
-    size_t      dest_size,
-    const void* src,
-    size_t      src_size)
+void __memcpy_s(const char* file, size_t line, void* dest, size_t dest_size, const void* src, size_t src_size)
 {
     __ASSERT((dest != nullptr) && (src != nullptr));
     __ASSERT(dest_size >= src_size);
@@ -50,13 +40,7 @@ void __memcpy_s(
 #    endif // __no_memcpy_s
 
 #    ifdef __no_vsprintf_s
-int __vsprintf_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* format,
-    va_list     args)
+int __vsprintf_s(const char* file, size_t line, char* dest, size_t dest_size, const char* format, va_list args)
 {
     __ASSERT(dest != nullptr);
     __ASSERT(dest_size > 0);
@@ -68,13 +52,7 @@ int __vsprintf_s(
 #    endif // __no_vsprintf_s
 
 #    ifdef __no_sprintf_s
-int __sprintf_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* format,
-    ...)
+int __sprintf_s(const char* file, size_t line, char* dest, size_t dest_size, const char* format, ...)
 {
 
     va_list args;
@@ -86,12 +64,7 @@ int __sprintf_s(
 #    endif // __no_sprintf_s
 
 #    ifdef __no_sscanf_s
-int __sscanf_s(
-    const char* file,
-    size_t      line,
-    const char* buffer,
-    const char* format,
-    ...)
+int __sscanf_s(const char* file, size_t line, const char* buffer, const char* format, ...)
 {
     __ASSERT(buffer != nullptr);
     __ASSERT(format != nullptr);
@@ -104,12 +77,7 @@ int __sscanf_s(
 #    endif // __no_sscanf_s
 
 #    ifdef __no_strcpy_s
-int __strcpy_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* src)
+int __strcpy_s(const char* file, size_t line, char* dest, size_t dest_size, const char* src)
 {
     __ASSERT((dest != nullptr) && (src != nullptr));
     __ASSERT(dest_size > 0);
@@ -129,5 +97,7 @@ pid_t __gettid()
     }
     return tid;
 }
+
+EZLOG_NAMESPACE_END
 
 #endif // !_MSC_VER

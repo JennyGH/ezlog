@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "macros.h"
 
 #ifdef _MSC_VER
 #    include <process.h>
@@ -43,38 +44,23 @@
 #    include <unistd.h>
 #    include <sys/types.h>
 
+EZLOG_NAMESPACE_BEGIN
+
 typedef void (*assert_hook_t)(const char*, const char*, unsigned int);
 
 void set_assert_hook(assert_hook_t hook);
 
 #    ifndef memcpy_s
 #        define __no_memcpy_s
-void __memcpy_s(
-    const char* file,
-    size_t      line,
-    void*       dest,
-    size_t      dest_size,
-    const void* src,
-    size_t      src_size);
+void __memcpy_s(const char* file, size_t line, void* dest, size_t dest_size, const void* src, size_t src_size);
 #    endif // !memcpy_s
 
 #    ifndef vsprintf_s
 #        define __no_vsprintf_s
-int __vsprintf_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* format,
-    va_list     args);
+int  __vsprintf_s(const char* file, size_t line, char* dest, size_t dest_size, const char* format, va_list args);
 
 template <size_t dest_size>
-int __vsprintf_s(
-    const char* file,
-    size_t      line,
-    char (&dest)[dest_size],
-    const char* format,
-    va_list     args)
+int __vsprintf_s(const char* file, size_t line, char (&dest)[dest_size], const char* format, va_list args)
 {
     return __vsprintf_s(file, line, dest, dest_size, format, args);
 }
@@ -82,21 +68,10 @@ int __vsprintf_s(
 
 #    ifndef sprintf_s
 #        define __no_sprintf_s
-int __sprintf_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* format,
-    ...);
+int __sprintf_s(const char* file, size_t line, char* dest, size_t dest_size, const char* format, ...);
 
 template <size_t dest_size>
-int __sprintf_s(
-    const char* file,
-    size_t      line,
-    char (&dest)[dest_size],
-    const char* format,
-    ...)
+int __sprintf_s(const char* file, size_t line, char (&dest)[dest_size], const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -108,35 +83,23 @@ int __sprintf_s(
 
 #    ifndef sscanf_s
 #        define __no_sscanf_s
-int __sscanf_s(
-    const char* file,
-    size_t      line,
-    const char* buffer,
-    const char* format,
-    ...);
+int __sscanf_s(const char* file, size_t line, const char* buffer, const char* format, ...);
 #    endif // !sscanf_s
 
 #    ifndef strcpy_s
 #        define __no_strcpy_s
-int __strcpy_s(
-    const char* file,
-    size_t      line,
-    char*       dest,
-    size_t      dest_size,
-    const char* src);
+int __strcpy_s(const char* file, size_t line, char* dest, size_t dest_size, const char* src);
 
 template <size_t dest_size>
-int __strcpy_s(
-    const char* file,
-    size_t      line,
-    char (&dest)[dest_size],
-    const char* src)
+int __strcpy_s(const char* file, size_t line, char (&dest)[dest_size], const char* src)
 {
     return __strcpy_s(file, line, dest, dest_size, src);
 }
 #    endif // !strcpy_s
 
 pid_t __gettid();
+
+EZLOG_NAMESPACE_END
 
 #    ifndef localtime_s
 #        define localtime_s(_Tm, _Time) localtime_r((_Time), (_Tm))
@@ -217,6 +180,8 @@ pid_t __gettid();
 #    ifndef closesocket
 #        define closesocket(socket) close(socket)
 #    endif // !closesocket
+
+using namespace EZLOG_NAMESPACE;
 
 #endif // _MSC_VER
 
