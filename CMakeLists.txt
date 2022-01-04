@@ -153,7 +153,7 @@ endif() # endif MSVC
 add_definitions(
     -DUNICODE  # 设置工程使用 UNICODE 字符集
     -D_UNICODE # 设置工程使用 UNICODE 字符集
-    -DPROJECT_ROOT_PATH="${CMAKE_SOURCE_DIR}" # 用于获取当前工程根目录的宏
+    -DPROJECT_ROOT="${CMAKE_SOURCE_DIR}" # 用于获取当前工程根目录的宏
 )
 
 # 整个工程需要包含的库目录.

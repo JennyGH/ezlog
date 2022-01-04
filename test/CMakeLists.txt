@@ -19,12 +19,17 @@ add_executable(
     ${SOURCE_FILES}
 )
 
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
+)
+
 target_link_libraries(
     ${PROJECT_NAME}
-    ezlog
+    PRIVATE ezlog
 )
 
 install(
-    TARGETS ezlog_test
+    TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

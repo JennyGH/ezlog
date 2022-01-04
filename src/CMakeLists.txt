@@ -54,9 +54,14 @@ if(UNIX AND NOT ANDROID)
     set(LINK_LIBS pthread)
 endif() # ENDIF UNIX && !ANDROID
 
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
+)
+
 target_link_libraries(
     ${PROJECT_NAME}
-    ${LINK_LIBS}
+    PRIVATE ${LINK_LIBS}
 )
 
 install(

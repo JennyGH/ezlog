@@ -19,7 +19,6 @@ add_executable(
     ${SOURCE_FILES}
 )
 
-set(EX_LINK_LIBRARIES )
 if(MSVC)
     LIST(APPEND EX_LINK_LIBRARIES shlwapi)
 else()
@@ -30,13 +29,18 @@ if(benchmark_FOUND)
     LIST(APPEND EX_LINK_LIBRARIES benchmark::benchmark)
 endif() # ENDIF benchmark_FOUND
 
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
+)
+
 target_link_libraries(
     ${PROJECT_NAME}
-    ${EX_LINK_LIBRARIES}
-    ezlog
+    PRIVATE ${EX_LINK_LIBRARIES}
+    PRIVATE ezlog
 )
 
 install(
-    TARGETS ezlog_benchmark_test
+    TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
