@@ -46,14 +46,14 @@ void timer::notify()
 
 void timer::stop()
 {
-    if (!this->_running)
-    {
-        return;
-    }
     {
         std::lock_guard<std::mutex> _scope_lock(this->_mutex);
+        if (!this->_running)
+        {
+            return;
+        }
         this->_running = false;
     }
-    this->_event.notify_one();
+    this->notify();
     this->_future.wait();
 }
