@@ -3,6 +3,9 @@ EZLOG_NAMESPACE_BEGIN
 class safe_buffer
 {
 public:
+    using flush_callback_t = size_t (*)(void* context, const void* data, const size_t& size);
+
+public:
     safe_buffer(size_t size);
     safe_buffer(const safe_buffer& that);
     ~safe_buffer();
@@ -14,7 +17,7 @@ public:
     size_t push(const size_t& length, const char* string);
     size_t push(const char* format, ...);
     size_t push(const char* format, va_list args);
-    size_t flush(FILE* dest_stream);
+    size_t flush(flush_callback_t callback, void* context);
     size_t get_remain_size() const;
     bool   empty() const;
     void   clear();

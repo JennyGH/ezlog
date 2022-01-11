@@ -123,20 +123,15 @@ size_t safe_buffer::push(const char* format, va_list args)
     return size;
 }
 
-size_t safe_buffer::flush(FILE* dest_stream)
+size_t safe_buffer::flush(flush_callback_t callback, void* context)
 {
-    if (nullptr == dest_stream)
+    if (nullptr == callback)
     {
         return 0;
     }
-    size_t size = 0;
     size_t used = _size - _remain;
-    {
-        EZLOG_SCOPE_LOCK(this->_mutex);
-        size = ::fwrite(_buffer, sizeof(char), used, dest_stream);
-    }
-    ::fflush(dest_stream);
-    return size;
+    EZLOG_SCOPE_LOCK(this->_mutex);
+    return callback(context, _buffer, used);
 }
 
 size_t safe_buffer::get_remain_size() const

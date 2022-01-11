@@ -3,11 +3,24 @@
 
 EZLOG_NAMESPACE_BEGIN
 
+static inline size_t _default_flush_callback(void* context, const void* data, const size_t& size)
+{
+    FILE* dest_stream = static_cast<FILE*>(context);
+    if (nullptr == dest_stream)
+    {
+        return 0;
+    }
+    size_t wrote = ::fwrite(data, sizeof(unsigned char), size, dest_stream);
+    ::fflush(dest_stream);
+    return wrote;
+}
+
 async_logger::async_logger(config_t config)
     : basic_logger(config)
 {
     this->_timer.start(
-        [this] {
+        [this]
+        {
             this->flush_buffers();
         },
         this->_config->get_async_log_flush_interval());
@@ -43,7 +56,7 @@ void async_logger::flush_buffers()
             break;
         }
         buffer_ptr_t buffer = buffers.front();
-        buffer->flush(*dest);
+        buffer->flush(_default_flush_callback, *dest);
         buffers.pop();
     }
 }
