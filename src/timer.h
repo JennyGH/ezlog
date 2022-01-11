@@ -24,7 +24,8 @@ public:
     void stop();
 
 private:
-    bool                    _running;
+    bool                    _started;
+    std::atomic<bool>       _running;
     std::mutex              _mutex;
     std::condition_variable _event;
     std::future<void>       _future;

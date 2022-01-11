@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# =============== Configurations of vcpkg ===============
+VCPKG_TARGET_TRIPLET=x64-linux
+CMAKE_VCPKG_OPTIONS=
+if $(command -v vcpkg  >/dev/null 2>&1); then
+  CMAKE_VCPKG_OPTIONS=-DVCPKG_TARGET_TRIPLET=$VCPKG_TARGET_TRIPLET -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+  vcpkg install gtest $VCPKG_TRIPLET
+fi
+# =======================================================
+
 # =============== Set some local variables here. ===============
 # You can change the name of build directory here:
 BUILD_DIR_NAME=build-linux
@@ -32,6 +41,7 @@ function build() {
           -DBUILD_SHARED_LIBS=FALSE             \
           -DBUILD_TEST=TRUE                     \
           -DBUILD_BENCHMARK=TRUE                \
+          $CMAKE_VCPKG_OPTIONS                  \
           ..
     cmake --build . --config $BUILD_TYPE
     make install

@@ -30,7 +30,7 @@
 #    define SCOPE_PTR_OF(obj, ...) std::shared_ptr<typename std::remove_pointer<decltype(obj)>::type> _scope_##obj##_ptr_(obj, ##__VA_ARGS__)
 #endif // !SCOPE_PTR_OF
 
-#define EZLOG_CONSOLE(fmt, ...) // printf(fmt "\n", ##__VA_ARGS__)
+#define EZLOG_CONSOLE(fmt, ...) // printf(std::string("%zu ").append(fmt).append("\n").c_str(), ::time(NULL), ##__VA_ARGS__)
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"
