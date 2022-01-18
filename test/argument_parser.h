@@ -11,9 +11,7 @@ typedef std::map<std::string, std::string> _argument_map;
 class argument_not_found_exception
 {
 public:
-    argument_not_found_exception(
-        const std::string& moduleName,
-        const std::string& optionName);
+    argument_not_found_exception(const std::string& moduleName, const std::string& optionName);
     ~argument_not_found_exception();
     const char* get_module_name() const;
     const char* what() const;
@@ -23,10 +21,7 @@ private:
     std::string m_message;
 };
 
-static void _is_argument_exist(
-    const std::string& arg_name,
-    const std::string& module_name,
-    _argument_map&     arguments)
+static void _is_argument_exist(const std::string& arg_name, const std::string& module_name, _argument_map& arguments)
 {
     if (arguments.find(arg_name) == arguments.end())
     {
@@ -37,10 +32,7 @@ static void _is_argument_exist(
 template <typename value_type>
 struct _argument_getter
 {
-    static value_type value_of(
-        const std::string& arg_name,
-        const std::string& module_name,
-        _argument_map&     arguments)
+    static value_type value_of(const std::string& arg_name, const std::string& module_name, _argument_map& arguments)
     {
         _is_argument_exist(arg_name, module_name, arguments);
         std::stringstream ss;
@@ -49,11 +41,7 @@ struct _argument_getter
         ss >> val;
         return val;
     }
-    static value_type value_of(
-        const std::string& arg_name,
-        const std::string& module_name,
-        _argument_map&     arguments,
-        value_type         default_value)
+    static value_type value_of(const std::string& arg_name, const std::string& module_name, _argument_map& arguments, value_type default_value)
     {
         value_type val = default_value;
         if (arguments.find(arg_name) != arguments.end())
@@ -69,10 +57,7 @@ struct _argument_getter
 template <>
 struct _argument_getter<bool>
 {
-    static bool value_of(
-        const std::string& agr_name,
-        const std::string& module_name,
-        _argument_map&     arguments)
+    static bool value_of(const std::string& agr_name, const std::string& module_name, _argument_map& arguments)
     {
         _is_argument_exist(agr_name, module_name, arguments);
         bool val = false;
@@ -82,11 +67,7 @@ struct _argument_getter<bool>
         }
         return val;
     }
-    static bool value_of(
-        const std::string& arg_name,
-        const std::string& module_name,
-        _argument_map&     arguments,
-        bool               default_value)
+    static bool value_of(const std::string& arg_name, const std::string& module_name, _argument_map& arguments, bool default_value)
     {
         bool val = default_value;
         if (arguments.find(arg_name) != arguments.end())
@@ -100,19 +81,12 @@ struct _argument_getter<bool>
 template <>
 struct _argument_getter<std::string>
 {
-    static std::string value_of(
-        const std::string& arg_name,
-        const std::string& module_name,
-        _argument_map&     arguments)
+    static std::string value_of(const std::string& arg_name, const std::string& module_name, _argument_map& arguments)
     {
         _is_argument_exist(arg_name, module_name, arguments);
         return arguments[arg_name];
     }
-    static std::string value_of(
-        const std::string& arg_name,
-        const std::string& module_name,
-        _argument_map&     arguments,
-        std::string        default_value)
+    static std::string value_of(const std::string& arg_name, const std::string& module_name, _argument_map& arguments, std::string default_value)
     {
         std::string val = default_value;
         if (arguments.find(arg_name) == arguments.end())
@@ -133,20 +107,13 @@ public:
     template <typename T>
     T get(const std::string& arg_name)
     {
-        return _argument_getter<T>::value_of(
-            arg_name,
-            m_module_name,
-            m_arguments);
+        return _argument_getter<T>::value_of(arg_name, m_module_name, m_arguments);
     }
 
     template <typename T>
     T get(const std::string& argumentName, T default_value)
     {
-        return _argument_getter<T>::value_of(
-            argumentName,
-            m_module_name,
-            m_arguments,
-            default_value);
+        return _argument_getter<T>::value_of(argumentName, m_module_name, m_arguments, default_value);
     }
 
     std::string get_module_name() const;

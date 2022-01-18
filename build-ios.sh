@@ -2,7 +2,7 @@
 PROJECT_ROOT=`pwd`
 BUILD_DIR=`pwd`/build-ios
 BUILD_TYPE=Release
-INSTALL_DIR=`pwd`/built/ios
+INSTALL_DIR=`pwd`/built/iOS
 
 function do_compile(){
     if [ -d $BUILD_DIR ]; then

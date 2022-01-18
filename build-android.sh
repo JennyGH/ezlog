@@ -22,7 +22,7 @@ DoCompile(){
     cmake --build . --config $BUILD_TYPE -- -j $(nproc) && make install
 }
 
-for ARCH in armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64
+for ARCH in armeabi armeabi-v7a arm64-v8a x86_64 mips mips64
 do
     DoCompile
 done

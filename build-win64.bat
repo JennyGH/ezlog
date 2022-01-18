@@ -1,1 +1,1 @@
-@CALL build-win32.bat x64
+@CALL build-win32.bat 64

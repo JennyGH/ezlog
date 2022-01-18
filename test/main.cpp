@@ -24,11 +24,11 @@ typedef void* thread_arg_t;
 #endif // _MSC_VER
 
 #define now time(0)
-#define console(...)                                                           \
-    do                                                                         \
-    {                                                                          \
-        printf(__VA_ARGS__);                                                   \
-        printf("\n");                                                          \
+#define console(...)                                                                                                                                           \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        printf(__VA_ARGS__);                                                                                                                                   \
+        printf("\n");                                                                                                                                          \
     } while (0)
 
 #ifndef PROJECT_ROOT
@@ -54,9 +54,8 @@ typedef struct test_result
 static unsigned char      g_test_bytes[39] = {0};
 static const unsigned int g_test_log_count = 5000000;
 static test_config        g_test_config;
-static test_result*       g_test_results = NULL;
-static unsigned long      g_total_bytes_per_thread =
-    g_test_log_count * (9 + sizeof(g_test_bytes) * 2 + 12 + 1);
+static test_result*       g_test_results           = NULL;
+static unsigned long      g_total_bytes_per_thread = g_test_log_count * (9 + sizeof(g_test_bytes) * 2 + 12 + 1);
 
 static void event_init(event_t& e)
 {
@@ -113,29 +112,20 @@ void _try_start_log_thread(async_thread_func_t func, thread_arg_t arg)
 #endif // _MSC_VER
 }
 
-static void assert_hook(const char* expr, const char* file, unsigned int line)
+static void assert_hook(void*, const char* expr, const char* file, unsigned int line)
 {
-    ezlog_write_log(
-        EZLOG_LEVEL_FATAL,
-        __FUNCTION__,
-        NULL,
-        0,
-        "Assertion failed: %s, at file: \"%s\", line: %d",
-        expr,
-        file,
-        line);
+    ezlog_write_log(EZLOG_LEVEL_FATAL, __FUNCTION__, NULL, 0, "Assertion failed: %s, at file: \"%s\", line: %d", expr, file, line);
     while (true) {}
 }
 
-static bool roll_hook(unsigned long file_size)
+static bool roll_hook(void*, unsigned long file_size)
 {
     return file_size >= g_test_config.roll_size;
 }
 
-static const char* get_output_path_hook()
+static const char* get_output_path_hook(void*)
 {
-    if (g_test_config.output_dir == EZLOG_STDOUT ||
-        g_test_config.output_dir == EZLOG_STDERR)
+    if (g_test_config.output_dir == EZLOG_STDOUT || g_test_config.output_dir == EZLOG_STDERR)
     {
         return g_test_config.output_dir.c_str();
     }
@@ -182,16 +172,14 @@ int main(int argc, char* argv[])
     argument_parser args(argc, argv);
     try
     {
-        g_test_config.output_dir =
-            args.get<std::string>("output_dir", EZLOG_STDOUT);
+        g_test_config.output_dir   = args.get<std::string>("output_dir", EZLOG_STDOUT);
         g_test_config.thread_count = args.get<unsigned int>("thread_count", 1);
         if (g_test_config.thread_count == 0)
         {
             g_test_config.thread_count = 1;
         }
-        g_test_config.roll_size = args.get<unsigned long>("roll_size", 0);
-        g_test_config.async_buffer_size =
-            args.get<unsigned long>("async_buffer_size", 0);
+        g_test_config.roll_size         = args.get<unsigned long>("roll_size", 0);
+        g_test_config.async_buffer_size = args.get<unsigned long>("async_buffer_size", 0);
     }
     catch (const argument_not_found_exception& ex)
     {
@@ -213,21 +201,13 @@ int main(int argc, char* argv[])
     ezlog_set_level(EZLOG_LEVEL_VERBOSE);
     ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL);
     ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
-    ezlog_set_format(
-        EZLOG_LEVEL_WARN,
-        EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(
-        EZLOG_LEVEL_INFO,
-        EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(
-        EZLOG_LEVEL_DEBUG,
-        EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(
-        EZLOG_LEVEL_VERBOSE,
-        EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_roll_hook(roll_hook);
-    ezlog_set_assert_hook(assert_hook);
-    ezlog_set_get_output_path_hook(get_output_path_hook);
+    ezlog_set_format(EZLOG_LEVEL_WARN, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
+    ezlog_set_format(EZLOG_LEVEL_INFO, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
+    ezlog_set_format(EZLOG_LEVEL_DEBUG, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
+    ezlog_set_format(EZLOG_LEVEL_VERBOSE, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
+    ezlog_set_roll_hook(roll_hook, nullptr);
+    ezlog_set_assert_hook(assert_hook, nullptr);
+    ezlog_set_get_output_path_hook(get_output_path_hook, nullptr);
 
     // while (true)
     //{
@@ -257,9 +237,8 @@ int main(int argc, char* argv[])
     printf_result(g_test_results, g_test_config.thread_count);
     // ***************************************
 
-    unsigned long total_bytes =
-        g_total_bytes_per_thread * g_test_config.thread_count;
-    double b_per_sec = total_bytes / total_seconds;
+    unsigned long total_bytes = g_total_bytes_per_thread * g_test_config.thread_count;
+    double        b_per_sec   = total_bytes / total_seconds;
     if (b_per_sec > 1024.00)
     {
         double kb_per_sec = b_per_sec / 1024.00;

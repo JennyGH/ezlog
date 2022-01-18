@@ -1,38 +1,46 @@
-PROJECT(ezlog_benchmark_test)
+project(ezlog_benchmark_test)
 
-FILE(GLOB_RECURSE INCLUDE_FILES
+file(GLOB_RECURSE INCLUDE_FILES
     ${PROJECT_SOURCE_DIR}/*.h
     ${PROJECT_SOURCE_DIR}/*.hpp
 )
 
-FILE(GLOB_RECURSE SOURCE_FILES 
+file(GLOB_RECURSE SOURCE_FILES 
     ${PROJECT_SOURCE_DIR}/*.c
     ${PROJECT_SOURCE_DIR}/*.cpp
 )
     
-SOURCE_GROUP("Header Files" FILES "${INCLUDE_FILES}")
-SOURCE_GROUP("Source Files" FILES "${SOURCE_FILES}")
+source_group("Header Files" FILES "${INCLUDE_FILES}")
+source_group("Source Files" FILES "${SOURCE_FILES}")
 
-ADD_EXECUTABLE(
+add_executable(
     ${PROJECT_NAME}
     ${INCLUDE_FILES}
     ${SOURCE_FILES}
 )
 
-IF(MSVC)
-    SET(EX_LINK_LIBRARIES shlwapi)
-ELSE()
-    SET(EX_LINK_LIBRARIES pthread)
-ENDIF() # ENDIF MSVC
+if(MSVC)
+    LIST(APPEND EX_LINK_LIBRARIES shlwapi)
+else()
+    LIST(APPEND EX_LINK_LIBRARIES pthread)
+endif() # ENDIF MSVC
 
-TARGET_LINK_LIBRARIES(
+if(benchmark_FOUND)
+    LIST(APPEND EX_LINK_LIBRARIES benchmark::benchmark)
+endif() # ENDIF benchmark_FOUND
+
+target_include_directories(
     ${PROJECT_NAME}
-    ${EX_LINK_LIBRARIES}
-    ezlog
-    benchmark::benchmark
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
 )
 
-INSTALL(
-    TARGETS ezlog_benchmark_test
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE ${EX_LINK_LIBRARIES}
+    PRIVATE ezlog
+)
+
+install(
+    TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
