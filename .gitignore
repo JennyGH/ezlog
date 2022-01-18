@@ -6,3 +6,4 @@
 .vscode/
 obj/
 logs/
+include/ezlog_config.h

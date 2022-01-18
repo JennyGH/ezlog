@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <ezlog_config.h>
 
 #ifndef __cplusplus
 #    define bool unsigned char

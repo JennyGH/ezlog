@@ -5,13 +5,21 @@ if(MSVC)
     configure_file(${PROJECT_SOURCE_DIR}/VersionInfo.rc.in ${VERSIONINFO_RC})
 endif() # ENDIF MSVC
 
+set(EZLOG_CONFIG_HEADER  ${CMAKE_SOURCE_DIR}/include/ezlog_config.h)
+configure_file(${CMAKE_SOURCE_DIR}/include/ezlog_config.h.in ${EZLOG_CONFIG_HEADER})
+
 file(GLOB_RECURSE EXPORTS_FILES
     ${PROJECT_SOURCE_DIR}/*.def
     ${PROJECT_SOURCE_DIR}/*.map
 )
 
+file(GLOB_RECURSE CMAKE_TEMPLATE_FILES
+    ${CMAKE_SOURCE_DIR}/include/*.in
+)
+
 file(GLOB_RECURSE PUBLIC_INCLUDE_FILES
     ${CMAKE_SOURCE_DIR}/include/*.h
+    ${EZLOG_CONFIG_HEADER}
 )
 
 file(GLOB_RECURSE INCLUDE_FILES
@@ -40,6 +48,7 @@ add_library(
     ${SOURCE_FILES}
     ${EXPORTS_FILES}  # Add export file of C APIs.
     ${VERSIONINFO_RC} # Add version info.
+    ${CMAKE_TEMPLATE_FILES}
 )
 
 if(CMAKE_CXX_CPPCHECK)
