@@ -88,10 +88,8 @@ add_compile_definitions("$<$<BOOL:${IOS}>:iOS>")
 add_compile_definitions("$<$<BOOL:${ANDROID}>:ANDROID>")
 
 # 用于区分 DEBUG/RELEASE 的宏定义
-add_compile_definitions("$<$<CONFIG:Debug>:DEBUG=1>")
-add_compile_definitions("$<$<CONFIG:Debug>:_DEBUG=1>")
-add_compile_definitions("$<$<CONFIG:Release>:DEBUG=0>")
-add_compile_definitions("$<$<CONFIG:Release>:_DEBUG=0>")
+add_compile_definitions("$<$<CONFIG:Debug>:DEBUG>")
+add_compile_definitions("$<$<CONFIG:Debug>:_DEBUG>")
 
 # 用于区分 32/64 位的宏定义
 add_compile_definitions("$<$<BOOL:${x86_64}>:X64>")

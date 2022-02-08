@@ -8,7 +8,7 @@ IF "%TARGET_ARCH%" == "" (
     SET TARGET_ARCH=32
 )
 @ECHO Target arch: %TARGET_ARCH%
-SET BUILD_DIR_NAME=build-win-%TARGET_ARCH%
+CALL:Build Debug
 CALL:Build Release
 GOTO:EOF
 
@@ -18,8 +18,10 @@ SET PROJECT_ROOT=%CD%
 REM Specify build type:
 SET BUILD_TYPE=%1
 
+SET BUILD_DIR_NAME=build-win-%TARGET_ARCH%
+
 REM Specify install dir, binary files will be installed to here:
-SET INSTALL_DIR="%PROJECT_ROOT%/built/Windows/%TARGET_ARCH%"
+SET INSTALL_DIR="%PROJECT_ROOT%/built/Windows/%TARGET_ARCH%/%BUILD_TYPE%"
 
 REM =================== Try to make directory. ===================
 IF NOT EXIST %BUILD_DIR_NAME% (
@@ -34,8 +36,9 @@ CALL cmake -G "NMake Makefiles"                 ^
            -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ^
            -DCMAKE_VERBOSE_MAKEFILE=FALSE       ^
            -DBUILD_SHARED_LIBS=FALSE            ^
-           -DBUILD_TEST=TRUE                    ^
-           -DBUILD_BENCHMARK=TRUE               ^
+           -DBUILD_TEST=FALSE                   ^
+           -DBUILD_BENCHMARK=FALSE              ^
+           -DBUILD_EXAMPLE=FALSE                ^
            ..
             
 CALL cmake --build . --config %BUILD_TYPE% --target INSTALL
