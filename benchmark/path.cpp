@@ -105,7 +105,7 @@ bool ez::base::path::operator==(const path& path) const
     return _value == path._value;
 }
 
-ez::base::path::operator const std::string &() const
+ez::base::path::operator const std::string&() const
 {
     return _value;
 }

@@ -24,11 +24,11 @@ typedef void* thread_arg_t;
 #endif // _MSC_VER
 
 #define now time(0)
-#define console(...)                                                                                                                                           \
-    do                                                                                                                                                         \
-    {                                                                                                                                                          \
-        printf(__VA_ARGS__);                                                                                                                                   \
-        printf("\n");                                                                                                                                          \
+#define console(...)                                                                                                                                                                                   \
+    do                                                                                                                                                                                                 \
+    {                                                                                                                                                                                                  \
+        printf(__VA_ARGS__);                                                                                                                                                                           \
+        printf("\n");                                                                                                                                                                                  \
     } while (0)
 
 #ifndef PROJECT_ROOT
@@ -112,7 +112,7 @@ void _try_start_log_thread(async_thread_func_t func, thread_arg_t arg)
 #endif // _MSC_VER
 }
 
-static void assert_hook(void*, const char* expr, const char* file, unsigned int line)
+static void assert_hook(void*, const char* expr, const char* file, size_t line)
 {
     ezlog_write_log(EZLOG_LEVEL_FATAL, __FUNCTION__, NULL, 0, "Assertion failed: %s, at file: \"%s\", line: %d", expr, file, line);
     while (true) {}
@@ -193,21 +193,16 @@ int main(int argc, char* argv[])
 
     g_test_results = new test_result[g_test_config.thread_count]();
 
-    ezlog_init();
-    ezlog_set_log_roll_enabled(g_test_config.roll_size > 0);
-    ezlog_set_log_color_enabled(true);
-    ezlog_set_async_mode_enabled(g_test_config.async_buffer_size > 0);
-    ezlog_set_async_buffer_size(g_test_config.async_buffer_size);
-    ezlog_set_level(EZLOG_LEVEL_VERBOSE);
-    ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL);
-    ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
-    ezlog_set_format(EZLOG_LEVEL_WARN, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(EZLOG_LEVEL_INFO, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(EZLOG_LEVEL_DEBUG, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_format(EZLOG_LEVEL_VERBOSE, EZLOG_FORMAT_THREAD_INFO | EZLOG_FORMAT_FUNC_INFO);
-    ezlog_set_roll_hook(roll_hook, nullptr);
-    ezlog_set_assert_hook(assert_hook, nullptr);
-    ezlog_set_get_output_path_hook(get_output_path_hook, nullptr);
+    ezlog_config_st config;
+    ::memset(&config, 0, sizeof(config));
+    config.enable_rolling_log    = g_test_config.roll_size > 0;
+    config.enable_async_log      = g_test_config.async_buffer_size > 0;
+    config.async_log_buffer_size = g_test_config.async_buffer_size;
+    config.log_level             = EZLOG_LEVEL_VERBOSE;
+    config.roll_hook             = roll_hook;
+    config.assert_hook           = assert_hook;
+    config.get_output_path_hook  = get_output_path_hook;
+    ezlog_init(&config);
 
     // while (true)
     //{

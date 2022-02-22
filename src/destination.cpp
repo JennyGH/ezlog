@@ -32,9 +32,9 @@ destination::destination(const std::string& dest)
 
 destination::~destination()
 {
-    if (this->_should_close && nullptr != this->_dest)
+    if (_should_close && nullptr != _dest)
     {
-        ::fclose(this->_dest);
+        ::fclose(_dest);
     }
 }
 
@@ -45,22 +45,22 @@ const std::string& destination::get_path() const
 
 size_t destination::get_size() const
 {
-    if (nullptr == this->_dest)
+    if (nullptr == _dest)
     {
         return 0;
     }
-    ::fseek(this->_dest, 0L, SEEK_END);
-    return ::ftell(this->_dest);
+    ::fseek(_dest, 0L, SEEK_END);
+    return ::ftell(_dest);
 }
 
 bool destination::is_writable() const
 {
-    return nullptr != this->_dest;
+    return nullptr != _dest;
 }
 
 destination::operator FILE*() const
 {
-    return this->_dest;
+    return _dest;
 }
 
 EZLOG_NAMESPACE_END

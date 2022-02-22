@@ -8,7 +8,7 @@
 #include <ezlog.h>
 
 // 使用 ezlog_write_log_args 封装为自己的日志函数
-static void _my_log_function(unsigned int level, const char* function, const char* file, unsigned int line, const char* format, ...)
+static void _my_log_function(unsigned char level, const char* function, const char* file, unsigned int line, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -50,45 +50,45 @@ int main(int argc, char* argv[])
     static unsigned char bytes[256] = {0};
 
     // 初始化日志库
-    ezlog_init();
+    ezlog_init(nullptr);
 
-    // 设置日志等级
-    ezlog_set_level(EZLOG_LEVEL_VERBOSE);
-
-    // （可选）我想让日志变得好看一点
-    ezlog_set_log_color_enabled(true);
-
-    // （可选）同步输出太慢了，用异步可能会快一点
-    ezlog_set_async_mode_enabled(true);
-
-    ezlog_set_async_update_interval(1);
-
-    // （可选）告诉我要多大的缓冲区去存放异步日志内容吧
-    ezlog_set_async_buffer_size(1024 * 1024);
-
-    // （可选）我想某些等级的日志不要输出太多没用信息
-    ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 输出全部信息
-    ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
-    ezlog_set_format(EZLOG_LEVEL_DEBUG, EZLOG_FORMAT_ALL & (~(EZLOG_FORMAT_FILE_INFO | EZLOG_FORMAT_LINE_INFO))); // 不输出文件信息
-
-    // （可选）启用日志滚动
-    ezlog_set_log_roll_enabled(true);
-
-#if EZLOG_VERSION_MAJOR >= 2
-    // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
-    ezlog_set_assert_hook(_assert_hook, nullptr);
-    // （可选）告诉我该以什么方式来判断是否应该滚动日志了
-    ezlog_set_roll_hook(_roll_hook, nullptr);
-    // 告诉我日志该输出到哪里
-    ezlog_set_get_output_path_hook(_get_output_path_hook, nullptr);
-#else
-    // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
-    ezlog_set_assert_hook(_assert_hook);
-    // （可选）告诉我该以什么方式来判断是否应该滚动日志了
-    ezlog_set_roll_hook(_roll_hook);
-    // 告诉我日志该输出到哪里
-    ezlog_set_get_output_path_hook(_get_output_path_hook);
-#endif // EZLOG_VERSION_MAJOR >= 2
+    //    // 设置日志等级
+    //    ezlog_set_level(EZLOG_LEVEL_VERBOSE);
+    //
+    //    // （可选）我想让日志变得好看一点
+    //    ezlog_set_log_color_enabled(true);
+    //
+    //    // （可选）同步输出太慢了，用异步可能会快一点
+    //    ezlog_set_async_mode_enabled(true);
+    //
+    //    ezlog_set_async_update_interval(1);
+    //
+    //    // （可选）告诉我要多大的缓冲区去存放异步日志内容吧
+    //    ezlog_set_async_buffer_size(1024 * 1024);
+    //
+    //    // （可选）我想某些等级的日志不要输出太多没用信息
+    //    ezlog_set_format(EZLOG_LEVEL_FATAL, EZLOG_FORMAT_ALL); // 输出全部信息
+    //    ezlog_set_format(EZLOG_LEVEL_ERROR, EZLOG_FORMAT_ALL);
+    //    ezlog_set_format(EZLOG_LEVEL_DEBUG, EZLOG_FORMAT_ALL & (~(EZLOG_FORMAT_FILE_INFO | EZLOG_FORMAT_LINE_INFO))); // 不输出文件信息
+    //
+    //    // （可选）启用日志滚动
+    //    ezlog_set_log_roll_enabled(true);
+    //
+    //#if EZLOG_VERSION_MAJOR >= 2
+    //    // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
+    //    ezlog_set_assert_hook(_assert_hook, nullptr);
+    //    // （可选）告诉我该以什么方式来判断是否应该滚动日志了
+    //    ezlog_set_roll_hook(_roll_hook, nullptr);
+    //    // 告诉我日志该输出到哪里
+    //    ezlog_set_get_output_path_hook(_get_output_path_hook, nullptr);
+    //#else
+    //    // （可选）告诉我 EZLOG_ASSERT 的时候应该做什么
+    //    ezlog_set_assert_hook(_assert_hook);
+    //    // （可选）告诉我该以什么方式来判断是否应该滚动日志了
+    //    ezlog_set_roll_hook(_roll_hook);
+    //    // 告诉我日志该输出到哪里
+    //    ezlog_set_get_output_path_hook(_get_output_path_hook);
+    //#endif // EZLOG_VERSION_MAJOR >= 2
 
     // 输出些东西
     for (size_t i = 0; i < 100; i++)

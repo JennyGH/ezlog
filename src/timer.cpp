@@ -27,32 +27,32 @@ timer::timer()
 
 timer::~timer()
 {
-    this->stop();
+    stop();
 }
 
 void timer::start(routine_t routine, unsigned int interval)
 {
-    if (this->_started)
+    if (_started)
     {
         return;
     }
-    this->_started = true;
+    _started = true;
 
-    this->_future = std::async(
+    _future = std::async(
         std::launch::async,
         [this, routine, interval]()
         {
             EZLOG_CONSOLE("Worker thread of timer started.");
             while (true)
             {
-                this->_running = true;
+                _running = true;
                 {
-                    std::unique_lock<std::mutex> scope_lock(this->_mutex);
-                    if (std::cv_status::timeout == this->_event.wait_for(scope_lock, std::chrono::seconds(interval)))
+                    std::unique_lock<std::mutex> scope_lock(_mutex);
+                    if (std::cv_status::timeout == _event.wait_for(scope_lock, std::chrono::seconds(interval)))
                     {
                         EZLOG_CONSOLE("Timer timeout.");
                     }
-                    if (!this->_started)
+                    if (!_started)
                     {
                         EZLOG_CONSOLE("Timer stopping...");
                         break;
@@ -60,47 +60,47 @@ void timer::start(routine_t routine, unsigned int interval)
                 }
                 routine();
             }
-            this->_running = false;
+            _running = false;
             EZLOG_CONSOLE("Worker thread of timer exited.");
         });
 }
 
 void timer::notify()
 {
-    if (!this->_running)
+    if (!_running)
     {
         return;
     }
-    EZLOG_SCOPE_LOCK(this->_mutex);
-    this->_event.notify_one();
+    EZLOG_SCOPE_LOCK(_mutex);
+    _event.notify_one();
 }
 
 void timer::stop()
 {
     EZLOG_CONSOLE("Enter stop");
-    if (!this->_started)
+    if (!_started)
     {
         EZLOG_CONSOLE("Leave stop, timer is not started.");
         return;
     }
     while (true)
     {
-        const auto status = this->_future.wait_for(std::chrono::milliseconds(1));
+        const auto status = _future.wait_for(std::chrono::milliseconds(1));
         EZLOG_CONSOLE("Future status: %d", status);
-        if (std::future_status::ready == status || std::future_status::timeout == status && this->_running)
+        if (std::future_status::ready == status || std::future_status::timeout == status && _running)
         {
             break;
         }
     }
-    while (this->_running)
+    while (_running)
     {
         {
-            EZLOG_SCOPE_LOCK(this->_mutex);
-            this->_started = false;
-            this->_event.notify_all();
+            EZLOG_SCOPE_LOCK(_mutex);
+            _started = false;
+            _event.notify_all();
         }
-        const auto status = this->_future.wait_for(std::chrono::milliseconds(1));
-        EZLOG_CONSOLE("Waitting for `this->_future` exit, future %s, this->_running: %d.", _get_future_status_text(status), (bool)this->_running);
+        const auto status = _future.wait_for(std::chrono::milliseconds(1));
+        EZLOG_CONSOLE("Waitting for `_future` exit, future %s, _running: %d.", _get_future_status_text(status), (bool)_running);
         if (std::future_status::deferred == status)
         {
             break;

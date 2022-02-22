@@ -20,7 +20,7 @@ namespace ez
             path        parent() const;
             path        join(const std::string& sub_path) const;
             bool        operator==(const path& path) const;
-                        operator const std::string &() const;
+                        operator const std::string&() const;
                         operator const char*() const;
 
         private:

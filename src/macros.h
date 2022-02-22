@@ -1,5 +1,5 @@
 #pragma once
-#ifndef NDEBUG
+#ifdef DEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
 #    define _EZLOG_ASSERT(expr)                                                                                                                                \
@@ -7,7 +7,7 @@
         {                                                                                                                                                      \
             sleep(1);                                                                                                                                          \
         }
-#endif // !NDEBUG
+#endif // DEBUG
 
 #define EZLOG_NAMESPACE_BEGIN                                                                                                                                  \
     namespace ez                                                                                                                                               \
@@ -21,10 +21,19 @@
 
 #define EZLOG_NAMESPACE ez::prv
 
+#ifdef SUPPORT_NOTHROW_NEW
+#    define EZLOG_NEW    new (std::nothrow)
+#    define EZLOG_DELETE delete
+#else
+#    define EZLOG_NEW    new
+#    define EZLOG_DELETE delete
+#endif // SUPPORT_NOTHROW_NEW
+
 #define _MERGE_BODY(a, b)     a##b
 #define _MERGE(a, b)          _MERGE_BODY(a, b)
 #define EZLOG_UNIQUE(name)    _MERGE(name, __COUNTER__)
 #define EZLOG_SCOPE_LOCK(mtx) std::lock_guard<std::mutex> EZLOG_UNIQUE(_scope_lock_)(mtx)
+#define EZLOG_ARRSIZE(arr)    (sizeof(arr) / sizeof(arr[0]))
 
 #ifndef SCOPE_PTR_OF
 #    define SCOPE_PTR_OF(obj, ...) std::shared_ptr<typename std::remove_pointer<decltype(obj)>::type> _scope_##obj##_ptr_(obj, ##__VA_ARGS__)

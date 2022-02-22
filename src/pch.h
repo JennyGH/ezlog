@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef _MSC_VER
+#    include <sys/time.h>
+#endif // !_MSC_VER
+
 #include <string>
 #include <mutex>
 #include <atomic>

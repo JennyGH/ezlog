@@ -33,8 +33,8 @@ file(GLOB_RECURSE SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/*.cpp
 )
 
-source_group("Header Files" FILES "${INCLUDE_FILES}")
-source_group("Source Files" FILES "${SOURCE_FILES}")
+GROUP_FILES(${INCLUDE_FILES} "Header Files")
+GROUP_FILES(${SOURCE_FILES}  "Source Files")
 
 set(BUILD_TYPE STATIC)
 if(BUILD_SHARED_LIBS)
@@ -65,6 +65,7 @@ endif() # ENDIF UNIX && !ANDROID
 
 target_include_directories(
     ${PROJECT_NAME}
+    PRIVATE ${PROJECT_SOURCE_DIR}
     PRIVATE ${CMAKE_SOURCE_DIR}/include
 )
 

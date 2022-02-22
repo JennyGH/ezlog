@@ -44,14 +44,16 @@ static inline void _init(unsigned int async_buffer_size, unsigned int roll_size)
 {
     ez::base::file_system::rmdir(LOG_DIR);
     ez::base::file_system::mkdir(LOG_DIR);
-    ezlog_init();
-    ezlog_set_log_roll_enabled(roll_size > 0);
-    ezlog_set_log_color_enabled(true);
-    ezlog_set_async_mode_enabled(async_buffer_size > 0);
-    ezlog_set_async_buffer_size(async_buffer_size);
-    ezlog_set_level(EZLOG_LEVEL_VERBOSE);
-    ezlog_set_roll_hook(_should_roll, (void*)roll_size);
-    ezlog_set_get_output_path_hook(get_output_path_hook, nullptr);
+    ezlog_config_st config;
+    ::memset(&config, 0, sizeof(config));
+    config.enable_rolling_log    = roll_size > 0;
+    config.enable_async_log      = async_buffer_size > 0;
+    config.async_log_buffer_size = async_buffer_size;
+    config.log_level             = EZLOG_LEVEL_VERBOSE;
+    config.roll_hook             = _should_roll;
+    config.roll_hook_context     = (void*)roll_size;
+    config.get_output_path_hook  = get_output_path_hook;
+    ezlog_init(&config);
 }
 
 // static void test_init_deinit(benchmark::State& state)

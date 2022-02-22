@@ -55,12 +55,12 @@ int __vsprintf_s(const char* file, size_t line, char* dest, size_t dest_size, co
 int __sprintf_s(const char* file, size_t line, char* dest, size_t dest_size, const char* format, ...)
 {
 
-        va_list args;
-        va_start(args, format);
-        int rc = __vsprintf_s(file, line, dest, dest_size, format, args);
-        va_end(args);
-        return rc;
-    }
+    va_list args;
+    va_start(args, format);
+    int rc = __vsprintf_s(file, line, dest, dest_size, format, args);
+    va_end(args);
+    return rc;
+}
 #    endif // __no_sprintf_s
 
 #    ifdef __no_sscanf_s
@@ -88,15 +88,15 @@ int __strcpy_s(const char* file, size_t line, char* dest, size_t dest_size, cons
 }
 #    endif // __no_strcpy_s
 
-    pid_t __gettid()
+pid_t __gettid()
+{
+    static __thread pid_t tid = 0;
+    if (tid == 0)
     {
-        static __thread pid_t tid = 0;
-        if (tid == 0)
-        {
-            tid = syscall(SYS_gettid);
-        }
-        return tid;
+        tid = syscall(SYS_gettid);
     }
+    return tid;
+}
 
 EZLOG_NAMESPACE_END
 

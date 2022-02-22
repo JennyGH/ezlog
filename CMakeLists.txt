@@ -5,7 +5,10 @@ cmake_minimum_required(VERSION 3.20)
 
 project(ezlog VERSION 2.0.0)
 
+include(CheckCXXSymbolExists)
 include(CheckCXXCompilerFlag)
+include(CheckCXXSourceCompiles)
+include(${CMAKE_SOURCE_DIR}/cmake/utils.cmake)
 
 # 输出工程相关信息
 message(STATUS "PROJECT INFO:")
@@ -35,11 +38,11 @@ message(STATUS "    ANDROID:                        ${ANDROID}")
 message(STATUS "    MSVC_VERSION:                   ${MSVC_VERSION}")
 
 # 自定义选项
-OPTION(BUILD_SHARED_LIBS "Build shared libraries." ON)
-OPTION(ENABLE_STATIC_CXX_RUNTIME "Link C++ static library." ON)
-OPTION(BUILD_TEST "Build test." ON)
-OPTION(BUILD_EXAMPLE "Build example." ON)
-OPTION(BUILD_BENCHMARK "Build benchmark." ON)
+option(BUILD_SHARED_LIBS "Build shared libraries." ON)
+option(ENABLE_STATIC_CXX_RUNTIME "Link C++ static library." ON)
+option(BUILD_TEST "Build test." ON)
+option(BUILD_EXAMPLE "Build example." ON)
+option(BUILD_BENCHMARK "Build benchmark." ON)
 
 # 检查当前编译器是否64位
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
@@ -111,6 +114,16 @@ if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     add_definitions(-DENABLE_CXX11)
 endif() # endif COMPILER_SUPPORTS_CXX11
+
+check_cxx_source_compiles(
+    "#include <new>
+    int main() { int* ptr = new (std::nothrow) int[1]; return 0; }
+    "
+    SUPPORT_NOTHROW_NEW
+)
+if(SUPPORT_NOTHROW_NEW)
+    add_definitions(-DSUPPORT_NOTHROW_NEW)
+endif() # endif SUPPORT_NOTHROW_NEW
 
 # 设置编译时选项.
 if(MSVC)

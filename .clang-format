@@ -33,7 +33,7 @@ BreakConstructorInitializersBeforeComma: true
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: false
-ColumnLimit: 160
+ColumnLimit: 200
 ContinuationIndentWidth: 4
 SpaceBeforeAssignmentOperators: true
 SpacesBeforeTrailingComments: 1

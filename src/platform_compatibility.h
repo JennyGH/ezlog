@@ -48,7 +48,7 @@ EZLOG_NAMESPACE_BEGIN
 
 typedef void (*assert_hook_t)(const char*, const char*, unsigned int);
 
-    void set_assert_hook(assert_hook_t hook);
+void set_assert_hook(assert_hook_t hook);
 
 #    ifndef memcpy_s
 #        define __no_memcpy_s
@@ -97,7 +97,7 @@ int __strcpy_s(const char* file, size_t line, char (&dest)[dest_size], const cha
 }
 #    endif // !strcpy_s
 
-    pid_t __gettid();
+pid_t __gettid();
 
 EZLOG_NAMESPACE_END
 
