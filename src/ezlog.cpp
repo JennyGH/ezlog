@@ -10,6 +10,9 @@
 
 #define SCOPE_LOCK EZLOG_SCOPE_LOCK(g_mutex)
 
+#define _default_text_log_encode_hook _text_log_to_asn1
+#define _default_byte_log_encode_hook _byte_log_to_asn1
+
 using namespace EZLOG_NAMESPACE;
 
 #ifdef _MSC_VER
@@ -117,7 +120,40 @@ static inline bool _is_level_writable(unsigned char level)
     return level <= g_config->log_level;
 }
 
-static inline ezlog_buffer_t _default_text_log_encode_hook(unsigned char level, const char* func, const char* file, size_t line, const char* format, va_list args)
+template <class T>
+static inline typename std::enable_if<std::is_integral<T>::value, void>::type _append_to_buffer(ezlog_buffer_t buffer, const T& value)
+{
+    buffer->core.append((const decltype(ezlog_buffer_st::core)::value_type*)&value, sizeof(value));
+}
+
+template <class T>
+static inline void _append_to_buffer(ezlog_buffer_t buffer, const std::basic_string<T>& value)
+{
+    buffer->core.append((const decltype(ezlog_buffer_st::core)::value_type*)value.data(), value.length());
+}
+
+static inline void _append_to_buffer(ezlog_buffer_t buffer, const char* value)
+{
+    while (nullptr != value)
+    {
+        buffer->core.append(1, *(value++));
+    }
+}
+
+static inline void _append_to_buffer(ezlog_buffer_t buffer, const formated_buffer_st& formated)
+{
+    if (nullptr != formated.data && formated.size > 0)
+    {
+        buffer->core.append((const decltype(ezlog_buffer_st::core)::value_type*)formated.data.get(), formated.size);
+    }
+}
+
+static inline void _append_to_buffer(ezlog_buffer_t buffer, const void* bytes, const size_t& size)
+{
+    buffer->core.append((const decltype(ezlog_buffer_st::core)::value_type*)bytes, size);
+}
+
+static inline ezlog_buffer_t _text_log_to_asn1(unsigned char level, const char* func, const char* file, size_t line, const char* format, va_list args)
 {
     ezlog_buffer_t buffer = EZLOG_NEW ezlog_buffer_st();
     if (nullptr != buffer)
@@ -136,7 +172,7 @@ static inline ezlog_buffer_t _default_text_log_encode_hook(unsigned char level, 
     return buffer;
 }
 
-static inline ezlog_buffer_t _default_byte_log_encode_hook(unsigned char level, const char* func, const char* file, size_t line, const void* bytes, size_t size)
+static inline ezlog_buffer_t _byte_log_to_asn1(unsigned char level, const char* func, const char* file, size_t line, const void* bytes, size_t size)
 {
     ezlog_buffer_t buffer = EZLOG_NEW ezlog_buffer_st();
     if (nullptr != buffer)

@@ -2,21 +2,21 @@
 #ifdef DEBUG
 #    define _EZLOG_ASSERT(expr) assert(expr)
 #else
-#    define _EZLOG_ASSERT(expr)                                                                                                                                \
-        while (!(expr))                                                                                                                                        \
-        {                                                                                                                                                      \
-            sleep(1);                                                                                                                                          \
+#    define _EZLOG_ASSERT(expr)                                                                                                                                                                        \
+        while (!(expr))                                                                                                                                                                                \
+        {                                                                                                                                                                                              \
+            sleep(1);                                                                                                                                                                                  \
         }
 #endif // DEBUG
 
-#define EZLOG_NAMESPACE_BEGIN                                                                                                                                  \
-    namespace ez                                                                                                                                               \
-    {                                                                                                                                                          \
-        namespace prv                                                                                                                                          \
+#define EZLOG_NAMESPACE_BEGIN                                                                                                                                                                          \
+    namespace ez                                                                                                                                                                                       \
+    {                                                                                                                                                                                                  \
+        namespace prv                                                                                                                                                                                  \
         {
 
-#define EZLOG_NAMESPACE_END                                                                                                                                    \
-    }                                                                                                                                                          \
+#define EZLOG_NAMESPACE_END                                                                                                                                                                            \
+    }                                                                                                                                                                                                  \
     }
 
 #define EZLOG_NAMESPACE ez::prv
@@ -40,6 +40,10 @@
 #endif // !SCOPE_PTR_OF
 
 #define EZLOG_CONSOLE(fmt, ...) // printf(std::string("%zu ").append(fmt).append("\n").c_str(), ::time(NULL), ##__VA_ARGS__)
+
+#define synchronized(x)                                                                                                                                                                                \
+    for (int i = 0; i < 1; i++)                                                                                                                                                                        \
+        for (std::lock_guard<std::mutex> lock(_mutex); i < 1; i++)
 
 #define EZLOG_COLOR_START "\033["
 #define EZLOG_COLOR_END   "\033[0m"

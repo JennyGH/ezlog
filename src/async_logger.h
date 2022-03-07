@@ -2,12 +2,11 @@
 #include <queue>
 #include "timer.h"
 #include "basic_logger.h"
-#include "safe_buffer.h"
 EZLOG_NAMESPACE_BEGIN
 class async_logger : public basic_logger
 {
 public:
-    typedef std::shared_ptr<safe_buffer> buffer_ptr_t;
+    typedef std::basic_string<uint8_t> buffer_ptr_t;
 
 private:
     void flush_buffers();

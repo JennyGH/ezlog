@@ -3,10 +3,9 @@
 
 EZLOG_NAMESPACE_BEGIN
 
-static inline size_t _default_flush_callback(void* context, const void* data, const size_t& size)
+static inline size_t _default_flush_callback(FILE* dest_stream, const void* data, const size_t& size)
 {
-    FILE* dest_stream = static_cast<FILE*>(context);
-    if (nullptr == dest_stream)
+    if (nullptr == dest_stream || nullptr == data || 0 == size)
     {
         return 0;
     }
@@ -46,8 +45,8 @@ void async_logger::flush_buffers()
             }
             break;
         }
-        buffer_ptr_t buffer = buffers.front();
-        buffer->flush(_default_flush_callback, *dest);
+        buffer_ptr_t& buffer = buffers.front();
+        _default_flush_callback(*dest, buffer.data(), buffer.length());
         buffers.pop();
     }
 }
@@ -62,10 +61,11 @@ size_t async_logger::do_commit(FILE* dest, const void* data, const size_t& lengt
     size_t commited_size = 0;
     if (length > 0)
     {
-        buffer_ptr_t buffer = std::make_shared<safe_buffer>(length);
-        commited_size       = buffer->push(length, (const char*)data);
+        buffer_ptr_t buffer;
+        buffer.append((const uint8_t*)data, length);
+        commited_size = length;
         EZLOG_SCOPE_LOCK(_mutex);
-        _buffers.push(buffer);
+        _buffers.push(std::move(buffer));
     }
     return commited_size;
 }

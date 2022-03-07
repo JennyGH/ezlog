@@ -125,6 +125,16 @@ if(SUPPORT_NOTHROW_NEW)
     add_definitions(-DSUPPORT_NOTHROW_NEW)
 endif() # endif SUPPORT_NOTHROW_NEW
 
+check_cxx_source_compiles(
+    "#include <string>
+    int main() { const std::string str = std::to_string(0); return 0; }
+    "
+    SUPPORT_STD_TOSTRING
+)
+if(SUPPORT_STD_TOSTRING)
+    add_definitions(-DSUPPORT_STD_TOSTRING)
+endif() # endif SUPPORT_STD_TOSTRING
+
 # 设置编译时选项.
 if(MSVC)
     check_cxx_compiler_flag("/MP"    COMPILER_SUPPORTS_FLAG_MP)

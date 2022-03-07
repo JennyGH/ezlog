@@ -15,7 +15,7 @@ static const char* g_log_level_colors[] = {
     EZLOG_COLOR_VERBOSE,
 };
 
-#ifdef ANDROID
+#ifndef SUPPORT_STD_TOSTRING
 namespace std
 {
     template <class T>
@@ -26,7 +26,7 @@ namespace std
         return ss.str();
     }
 };     // namespace std
-#endif // ANDROID
+#endif // !SUPPORT_STD_TOSTRING
 
 static void _get_basename_and_suffix(const std::string& path, std::string& basename, std::string& suffix)
 {
